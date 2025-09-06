@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace Player.Windows;
+namespace Riffle.Player.Windows;
 
 /// <summary>
 /// Interaction logic for App.xaml
