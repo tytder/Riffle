@@ -8,10 +8,23 @@ namespace Riffle.Player.Windows.Services
     {
         public bool IsPlaying { get; set; }
         public bool HasTrackLoaded { get; set; }
+        public string SongTitle => _audioFile?.FileName.Split('\\')[^1] ?? "No File Selected";
         public event EventHandler? TrackLoaded;
 
         public TimeSpan CurrentTime => _audioFile?.CurrentTime ?? TimeSpan.Zero;
         public TimeSpan TotalTime => _audioFile?.TotalTime ?? TimeSpan.Zero;
+        private float _volume = 1;
+        public float Volume
+        {
+            get => (_audioFile?.Volume ?? _volume) * 100;
+            set
+            {
+                if (_audioFile != null) 
+                    _audioFile.Volume = value / 100;
+                else
+                    _volume = value / 100;
+            }
+        }
 
         private IWavePlayer? _outputDevice;
         private AudioFileReader? _audioFile;
@@ -22,6 +35,7 @@ namespace Riffle.Player.Windows.Services
 
             _outputDevice = new WaveOutEvent();
             _audioFile = new AudioFileReader(filePath);
+            _outputDevice.Volume = _volume;
             _outputDevice.Init(_audioFile);
             _outputDevice.Play();
             IsPlaying = true;

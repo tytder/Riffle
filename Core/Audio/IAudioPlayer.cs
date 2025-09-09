@@ -10,6 +10,8 @@
         bool HasTrackLoaded { get; set; }
         TimeSpan CurrentTime { get; }
         TimeSpan TotalTime { get; }
+        float Volume { get; set; }
+        string SongTitle { get; }
         event EventHandler? TrackLoaded;
         void Seek(TimeSpan fromSeconds);
     }
