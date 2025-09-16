@@ -9,7 +9,9 @@ namespace Riffle.Player.Windows.Services
         public bool IsPlaying { get; set; }
         public bool HasTrackLoaded { get; set; }
         public string SongTitle => _audioFile?.FileName.Split('\\')[^1] ?? "No File Selected";
-        public event EventHandler? TrackLoaded;
+        public event EventHandler<Song> TrackLoaded;
+        public event EventHandler TrackEnded;
+        
 
         public TimeSpan CurrentTime => _audioFile?.CurrentTime ?? TimeSpan.Zero;
         public TimeSpan TotalTime => _audioFile?.TotalTime ?? TimeSpan.Zero;
@@ -29,18 +31,28 @@ namespace Riffle.Player.Windows.Services
         private IWavePlayer? _outputDevice;
         private AudioFileReader? _audioFile;
 
-        public void Play(string filePath)
+        public void Play(Song song)
         {
             Stop(); // reset if something is already playing
 
             _outputDevice = new WaveOutEvent();
-            _audioFile = new AudioFileReader(filePath);
+            _audioFile = new AudioFileReader(song.FilePath);
             _outputDevice.Volume = _volume;
             _outputDevice.Init(_audioFile);
+            _outputDevice.PlaybackStopped += OnPlaybackStopped;
             _outputDevice.Play();
             IsPlaying = true;
             HasTrackLoaded = true;
-            TrackLoaded?.Invoke(this, EventArgs.Empty);
+            TrackLoaded?.Invoke(this, song);
+        }
+
+        private void OnPlaybackStopped(object sender, StoppedEventArgs e)
+        {
+            // Only fire TrackEnded if we reached the end of the track naturally
+            if (_audioFile != null && _audioFile.CurrentTime >= _audioFile.TotalTime)
+            {
+                TrackEnded?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         public void Pause()
@@ -62,12 +74,16 @@ namespace Riffle.Player.Windows.Services
             if (HasTrackLoaded)
                 _audioFile.CurrentTime = fromSeconds;
         }
-
+        
         public void Stop()
         {
-            _outputDevice?.Stop();
-            _outputDevice?.Dispose();
-            _outputDevice = null;
+            if (_outputDevice != null)
+            {
+                _outputDevice.PlaybackStopped -= OnPlaybackStopped;
+                _outputDevice.Stop();
+                _outputDevice.Dispose();
+                _outputDevice = null;
+            }
 
             _audioFile?.Dispose();
             _audioFile = null;

@@ -2,7 +2,7 @@
 {
     public interface IAudioPlayer
     {
-        void Play(string filePath);
+        void Play(Song song);
         void Pause();
         void Resume();
         void Stop();
@@ -12,7 +12,8 @@
         TimeSpan TotalTime { get; }
         float Volume { get; set; }
         string SongTitle { get; }
-        event EventHandler? TrackLoaded;
+        event EventHandler<Song>? TrackLoaded;
         void Seek(TimeSpan fromSeconds);
+        event EventHandler? TrackEnded;
     }
 }

@@ -1,0 +1,25 @@
+﻿<Window x:Class="Riffle.Player.Windows.NewPlaylistWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Riffle.Player.Windows"
+        mc:Ignorable="d"
+        Title="Enter new playlist name" Height="150" Width="250"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="White"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        BorderBrush="Black"
+        BorderThickness="2">
+    <StackPanel Margin="10">
+        <TextBlock Text="Playlist name:"/>
+        <TextBox x:Name="TxtPlaylistName" Margin="0,5" Text="New Playlist"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="OK" Width="60" Margin="5" Click="OnOkClick"/>
+            <Button Content="Cancel" Width="60" Margin="5" Click="OnCancelClick"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

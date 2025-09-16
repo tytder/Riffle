@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Core;
 
 public static class MathExtension
 {
