@@ -91,13 +91,12 @@ namespace Riffle.Player.Windows
             PlaylistList.ItemsSource = PlaylistCollection;
             _allSongsPlaylist = new Playlist("All Songs");
             PlaylistCollection.Add(_allSongsPlaylist);
-            CurrentPlaylistPlaying = _allSongsPlaylist;
             PlaylistList.SelectedIndex = 0;
             
             // Setting current playlist
-            PlaylistContent.Items.Clear();
-            PlaylistContent.ItemsSource = CurrentPlaylistPlaying.PlaylistItems;
             CurrentPlaylistOpen = _allSongsPlaylist;
+            PlaylistContent.Items.Clear();
+            PlaylistContent.ItemsSource = CurrentPlaylistOpen.PlaylistItems;
             
             // Setting queue list
             _queuePlayer = new QueuePlayer(_player);
@@ -312,7 +311,7 @@ namespace Riffle.Player.Windows
         {
             if (PlaylistContent.SelectedItem is Song selectedSong)
             {
-                _queuePlayer.PlayFrom(selectedSong, CurrentPlaylistPlaying.PlaylistItems.ToList());
+                _queuePlayer.PlayFrom(selectedSong, CurrentPlaylistOpen.PlaylistItems.ToList());
                 
                 CurrentSongPlaying = selectedSong;
                 if (PlaylistList.SelectedItem is Playlist currentOpenPlaylist)
