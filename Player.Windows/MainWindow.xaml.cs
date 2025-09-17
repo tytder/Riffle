@@ -18,7 +18,6 @@ namespace Riffle.Player.Windows
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private ObservableCollection<Song> CurrentSongCollection { get; set; }
         private ObservableCollection<Playlist> PlaylistCollection { get; set; }
         
         private readonly IAudioPlayer _player;
@@ -33,13 +32,38 @@ namespace Riffle.Player.Windows
                 if (!Equals(_currentSongPlaying, value))
                 {
                     _currentSongPlaying = value;
-                    OnPropertyChanged(nameof(CurrentSongPlaying));
+                    OnPropertyChanged();
                 }
             }
         }
         
+        private Playlist _currentPlaylistPlaying;
+        public Playlist CurrentPlaylistPlaying
+        {
+            get => _currentPlaylistPlaying;
+            set
+            {
+                if (!Equals(_currentPlaylistPlaying, value))
+                {
+                    _currentPlaylistPlaying = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private Playlist _currentPlaylistOpen;
+        public Playlist CurrentPlaylistOpen
+        {
+            get => _currentPlaylistOpen;
+            set
+            {
+                if (!Equals(_currentPlaylistOpen, value))
+                {
+                    _currentPlaylistOpen = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         
-        public Playlist CurrentPlaylistPlaying, CurrentOpenPlaylist;
         private readonly Playlist _allSongsPlaylist;
         private bool _isQueueOpen;
         private Color _buttonInactiveColor;
@@ -61,11 +85,6 @@ namespace Riffle.Player.Windows
             
             Loaded += OnLoaded;
             
-            // Setting current playlist
-            CurrentSongCollection = new ObservableCollection<Song>();
-            PlaylistContent.Items.Clear();
-            PlaylistContent.ItemsSource = CurrentSongCollection;
-            
             // Setting playlists list
             PlaylistCollection = new ObservableCollection<Playlist>();
             PlaylistList.Items.Clear();
@@ -74,6 +93,11 @@ namespace Riffle.Player.Windows
             PlaylistCollection.Add(_allSongsPlaylist);
             CurrentPlaylistPlaying = _allSongsPlaylist;
             PlaylistList.SelectedIndex = 0;
+            
+            // Setting current playlist
+            PlaylistContent.Items.Clear();
+            PlaylistContent.ItemsSource = CurrentPlaylistPlaying.PlaylistItems;
+            CurrentPlaylistOpen = _allSongsPlaylist;
             
             // Setting queue list
             _queuePlayer = new QueuePlayer(_player);
@@ -136,6 +160,7 @@ namespace Riffle.Player.Windows
             TxtSongTitle.Text = song.Title;
             TxtArtistName.Text = song.Artist;
             _isDraggingSeekBarThumb = false;
+            QueueListView.ItemsSource = _queuePlayer.Queue;
         }
 
         private void Timer_Tick(object sender, EventArgs e)
@@ -211,23 +236,45 @@ namespace Riffle.Player.Windows
 
         private void BtnImportSong_OnClick(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog { Filter = "Audio files|*.mp3;*.wav" };
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Audio files|*.mp3;*.wav",
+                Multiselect = true
+            };
             if ((int)dialog.ShowDialog() % 5 == 1)
-                ShowSongMetadataDialog(dialog.FileName);
+            {
+                foreach (var file in dialog.FileNames)
+                {
+                    ShowSongMetadataDialog(file);
+                }
+            }
         }
         
         private void ShowSongMetadataDialog(string filePath)
         {
+            var tagFile = TagLib.File.Create(filePath);
+            
+            string suggestedTitle = !string.IsNullOrEmpty(tagFile.Tag.Title)
+                ? tagFile.Tag.Title
+                : System.IO.Path.GetFileNameWithoutExtension(filePath);
+            
+            string suggestedArtist = (tagFile.Tag.Performers != null && tagFile.Tag.Performers.Length > 0)
+                ? tagFile.Tag.Performers[0]
+                : string.Empty;
+            
             SongImportData metadataWindow = new SongImportData
             {
-                FilePath = filePath.Split('\\')[^1]
+                FilePath = System.IO.Path.GetFileName(filePath),
             };
+            
+            metadataWindow.TxtSongTitle.Text = suggestedTitle;
+            metadataWindow.TxtArtistName.Text = suggestedArtist;
+            
             if (metadataWindow.ShowDialog() == true)
             {
-                var song = TagLib.File.Create(filePath);
                 string title = metadataWindow.SongTitle;
                 string artist = metadataWindow.ArtistName;
-                TimeSpan duration = song.Properties.Duration;
+                TimeSpan duration = tagFile.Properties.Duration;
 
                 Song newSong = new Song
                 (
@@ -237,13 +284,17 @@ namespace Riffle.Player.Windows
                     filePath
                 );
                 
-                CurrentSongCollection.Add(newSong);
-
-                if (!Equals(CurrentPlaylistPlaying, _allSongsPlaylist))
+                if (PlaylistList.SelectedItem is Playlist currentOpenPlaylist)
                 {
-                    if (!_allSongsPlaylist.PlaylistItems.Contains(newSong))
-                        _allSongsPlaylist.PlaylistItems.Add(newSong);
+                    currentOpenPlaylist.PlaylistItems.Add(newSong);
+
+                    if (!Equals(currentOpenPlaylist, _allSongsPlaylist))
+                    {
+                        if (!_allSongsPlaylist.PlaylistItems.Contains(newSong))
+                            _allSongsPlaylist.PlaylistItems.Add(newSong);
+                    }
                 }
+                
             }
         }
 
@@ -261,12 +312,13 @@ namespace Riffle.Player.Windows
         {
             if (PlaylistContent.SelectedItem is Song selectedSong)
             {
-                _queuePlayer.PlayFrom(selectedSong, CurrentSongCollection);
-                QueueListView.ItemsSource = _queuePlayer.QueueCollection;
-                //_player.Play(selectedSong);
+                _queuePlayer.PlayFrom(selectedSong, CurrentPlaylistPlaying.PlaylistItems.ToList());
                 
                 CurrentSongPlaying = selectedSong;
-                CurrentPlaylistPlaying = CurrentOpenPlaylist;
+                if (PlaylistList.SelectedItem is Playlist currentOpenPlaylist)
+                {
+                    CurrentPlaylistPlaying = currentOpenPlaylist;
+                }
             }
         }
 
@@ -281,23 +333,8 @@ namespace Riffle.Player.Windows
         {
             if (PlaylistList.SelectedItem is Playlist selectedPlaylist)
             {
-                if (Equals(selectedPlaylist, CurrentOpenPlaylist)) return;
-                CurrentOpenPlaylist.PlaylistItems = new ObservableCollection<Song>(CurrentSongCollection);
-                CurrentSongCollection.Clear();
-                foreach (var item in selectedPlaylist.PlaylistItems)
-                    CurrentSongCollection.Add(item);
-                CurrentOpenPlaylist = selectedPlaylist;
-                if (Equals(selectedPlaylist, CurrentPlaylistPlaying))
-                {
-                    if (CurrentSongPlaying == null)
-                    {
-                        CurrentSongPlaying = _queuePlayer.CurrentSong;
-                    }
-                }
-                else
-                {
-                    CurrentSongPlaying = null;
-                }
+                PlaylistContent.ItemsSource = selectedPlaylist.PlaylistItems;
+                CurrentPlaylistOpen = selectedPlaylist;
             }
         }
 
@@ -308,11 +345,7 @@ namespace Riffle.Player.Windows
             {
                 var newPlaylist = new Playlist (playlistWindow.PlaylistName);
                 PlaylistCollection.Add(newPlaylist);
-                CurrentPlaylistPlaying.PlaylistItems = new ObservableCollection<Song>(CurrentSongCollection);
-                CurrentSongCollection.Clear();
-                foreach (var item in newPlaylist.PlaylistItems)
-                    CurrentSongCollection.Add(item);
-                CurrentPlaylistPlaying = newPlaylist;
+                CurrentPlaylistOpen = newPlaylist;
                 PlaylistList.SelectedItem = newPlaylist;
             }
         }
@@ -322,14 +355,12 @@ namespace Riffle.Player.Windows
             if (PlaylistList.SelectedItem is Playlist selectedPlaylist)
             {
                 if (Equals(selectedPlaylist, _allSongsPlaylist)) return;
-            }
-            DeletePlaylistWindow deletePlaylistWindow = new DeletePlaylistWindow();
-            if (deletePlaylistWindow.ShowDialog() == true)
-            {
-                CurrentSongCollection.Clear();
-                PlaylistCollection.Remove(CurrentPlaylistPlaying);
-                CurrentPlaylistPlaying = _allSongsPlaylist;
-                PlaylistList.SelectedItem = _allSongsPlaylist;
+                DeletePlaylistWindow deletePlaylistWindow = new DeletePlaylistWindow();
+                if (deletePlaylistWindow.ShowDialog() == true)
+                {
+                    PlaylistCollection.Remove(selectedPlaylist);
+                    PlaylistList.SelectedItem = _allSongsPlaylist;
+                }
             }
         }
 
@@ -345,7 +376,7 @@ namespace Riffle.Player.Windows
 
         private void BtnLoop_OnClick(object sender, RoutedEventArgs e)
         {
-            _queuePlayer.Loop = !_queuePlayer.Loop;
+            _queuePlayer.ToggleLoop();
             BtnLoop.Background = new SolidColorBrush(_queuePlayer.Loop ? Colors.White : _buttonInactiveColor);
         }
 

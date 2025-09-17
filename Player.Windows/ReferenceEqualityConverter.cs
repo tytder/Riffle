@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -11,8 +12,26 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
         if (values.Length < 2) return false;
-        //if (values[0] is Song && values[1] is Song)
-            return Equals(values[0], values[1]);
+        
+        if (values.Length == 2)
+        {
+            if (values[2] is not Playlist openPlaylist) return false;
+            if (values[3] is not Playlist playingPlaylist) return false;
+
+            return Equals(openPlaylist, playingPlaylist);
+        }
+
+        if (values.Length == 4)
+        {
+            if (values[0] is not Song thisRowSong) return false;
+            if (values[1] is not Song currentSong) return false;
+            if (values[2] is not Playlist openPlaylist) return false;
+            if (values[3] is not Playlist playingPlaylist) return false;
+
+            // Highlight if the song matches AND the playlist currently being viewed is the playlist thats playing
+            return Equals(thisRowSong, currentSong) && Equals(openPlaylist, playingPlaylist);
+        }
+
         return false;
     }
 

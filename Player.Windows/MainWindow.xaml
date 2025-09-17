@@ -51,26 +51,26 @@
                 Grid.Column="0"
                 MouseDoubleClick="PlaylistList_OnMouseDoubleClick">
             >
-            <!--<ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
-                    <Style.Triggers>
-                        <DataTrigger Value="True">
-                            <DataTrigger.Binding>
-                                <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                    ~1~ current item @1@
-                                    <Binding/>
-                                    ~1~ currently playing song @1@
-                                    <Binding Path="(MainWindow)DataContext.CurrentPlaylist"
-                                             RelativeSource="{RelativeSource AncestorType=windows:MainWindow}"/>
-                                </MultiBinding>
-                            </DataTrigger.Binding>
-                            <Setter Property="Background" Value="DarkGreen"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="FontWeight" Value="Bold"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ListView.ItemContainerStyle>-->
+            <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Style.Triggers>
+                            <DataTrigger Value="True">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
+                                        <!-- The playlist represented by this row -->
+                                        <Binding Path="." />
+                                        <!-- The PlayingPlaylist -->
+                                        <Binding Path="CurrentPlaylistPlaying"
+                                                 RelativeSource="{RelativeSource AncestorType=Window}" />
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+
+                                <Setter Property="Foreground" Value="Green"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView x:Name="PlaylistView">
                         <GridViewColumn Width="200">
@@ -163,6 +163,12 @@
                                         <Binding Path="." />
                                         <!-- The CurrentSong from your Window -->
                                         <Binding Path="CurrentSongPlaying"
+                                                 RelativeSource="{RelativeSource AncestorType=Window}" />
+                                        <!-- The OpenPlaylist -->
+                                        <Binding Path="CurrentPlaylistOpen"
+                                                 RelativeSource="{RelativeSource AncestorType=Window}" />
+                                        <!-- The PlayingPlaylist -->
+                                        <Binding Path="CurrentPlaylistPlaying"
                                                  RelativeSource="{RelativeSource AncestorType=Window}" />
                                     </MultiBinding>
                                 </DataTrigger.Binding>

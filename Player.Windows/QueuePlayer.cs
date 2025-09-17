@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Riffle.Core;
 using Riffle.Core.Audio;
 
 namespace Riffle.Player.Windows;
@@ -8,9 +10,10 @@ namespace Riffle.Player.Windows;
 public class QueuePlayer
 {
     private readonly IAudioPlayer _player;
-    public ObservableCollection<Song> QueueCollection = new();
-    public Song CurrentSong;
-    public bool Loop;
+    public ObservableQueue<Song> Queue = new();
+    public List<Song> PlaylistSource = new();
+    public Song CurrentSong { get; private set; }
+    public bool Loop { get; private set; }
 
     public QueuePlayer(IAudioPlayer player)
     {
@@ -23,29 +26,65 @@ public class QueuePlayer
         SkipToNextSong();
     }
 
-    public void PlayFrom(Song song, ObservableCollection<Song> playlist)
+    public void PlayFrom(Song song, List<Song> playlist)
     {
         if (song == null || playlist == null || !playlist.Contains(song)) return;
 
-        // Build the queue starting from the selected song to the end
-        QueueCollection = new ObservableCollection<Song>(playlist);
+        PlaylistSource = playlist.ToList();
+
+        RecreateQueue(song);
+
+        CurrentSong = Queue.Peek();
+        _player.Play(CurrentSong);
+        
+        /*// Build the queue starting from the selected song to the end
+        Queue = new ObservableQueue<Song>(playlist);
         int currentIndex = playlist.IndexOf(song);
         for (int i = 0; i < currentIndex; i++)
         {
-            Song notPlayed = QueueCollection[i];
-            QueueCollection.RemoveAt(i);
-            QueueCollection.Add(notPlayed);
+            Song notPlayed = Queue[i];
+            Queue.RemoveAt(i);
+            Queue.Add(notPlayed);
         }
-        CurrentSong = QueueCollection.First();
-        _player.Play(CurrentSong);
+        CurrentSong = Queue.First();
+        _player.Play(CurrentSong);*/
     }
 
     public void SkipToNextSong()
     {
-        int currentIndex = QueueCollection.IndexOf(CurrentSong);
+        if (Queue.Count == 0)
+        {
+            _player.Stop();
+            return;
+        }
+
+        // Dequeue current song
+        var prevSong = Queue.Dequeue();
+        if (Loop)
+        {
+            Queue.Enqueue(prevSong);
+        }
+
+        if (Queue.Count == 0)
+        {
+            if (Loop)
+            {
+                ResetQueueFromSource();
+            }
+            else
+            {
+                _player.Stop();
+                return;
+            }
+        }
+
+        CurrentSong = Queue.Peek();
+        _player.Play(CurrentSong);
+        
+        /*int currentIndex = Queue.IndexOf(CurrentSong);
         currentIndex++;
 
-        if (currentIndex >= QueueCollection.Count)
+        if (currentIndex >= Queue.Count)
         {
             if (Loop)
             {
@@ -58,20 +97,37 @@ public class QueuePlayer
             }
         }
 
-        CurrentSong = QueueCollection[currentIndex];
-        _player.Play(CurrentSong);
+        CurrentSong = Queue[currentIndex];
+        _player.Play(CurrentSong);*/
     }
 
     public void SkipToPrevSong()
     {
-        int currentIndex = QueueCollection.IndexOf(CurrentSong);
+        if (PlaylistSource.Count == 0 || CurrentSong == null)
+            return;
+
+        int index = PlaylistSource.IndexOf(CurrentSong) - 1;
+        if (index < 0)
+        {
+            if (Loop)
+                index = PlaylistSource.Count - 1;
+            else
+            {
+                _player.Stop();
+                return;
+            }
+        }
+
+        PlayFrom(PlaylistSource[index], PlaylistSource);
+        
+        /*int currentIndex = Queue.IndexOf(CurrentSong);
         currentIndex--;
 
         if (currentIndex < 0)
         {
             if (Loop)
             {
-                currentIndex = QueueCollection.Count - 1;
+                currentIndex = Queue.Count - 1;
             }
             else
             {
@@ -80,7 +136,41 @@ public class QueuePlayer
             }
         }
 
-        CurrentSong = QueueCollection[currentIndex];
-        _player.Play(CurrentSong);
+        CurrentSong = Queue[currentIndex];
+        _player.Play(CurrentSong);*/
+    }
+    
+    private void ResetQueueFromSource()
+    {
+        Queue = new ObservableQueue<Song>(PlaylistSource);
+    }
+
+    public void ToggleLoop()
+    {
+        Loop = !Loop;
+        var startIndex = PlaylistSource.IndexOf(CurrentSong);
+        for (var index = 0; index < PlaylistSource.Count; index++)
+        {
+            if (Loop)
+            {
+                var playlistSong = PlaylistSource[(startIndex + index) % PlaylistSource.Count];
+                if (Queue.Contains(playlistSong)) continue;
+                Queue.Enqueue(playlistSong);
+            }
+            else
+            {
+                if (index >= startIndex) break;
+                var playlistSong = PlaylistSource[index];
+                if (!Queue.Contains(playlistSong)) continue;
+                Queue.Remove(playlistSong);
+            }
+        }
+    }
+
+    private void RecreateQueue(Song song)
+    {
+        var startIndex = PlaylistSource.IndexOf(song);
+        var ordered = PlaylistSource.Skip(startIndex).Concat(PlaylistSource.Take(Loop ? startIndex : 0));
+        Queue = new ObservableQueue<Song>(ordered);
     }
 }

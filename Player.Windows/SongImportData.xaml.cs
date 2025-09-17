@@ -19,7 +19,7 @@ public partial class SongImportData : Window
         {
             _filePath = value;
             TxtFilePath.Text = _filePath;
-            TxtSongTitle.Text = _filePath.Split('\\')[^1][..^4]; // splits the file path and gets the name of the file, then removes the file extension
+            //TxtSongTitle.Text = _filePath.Split('\\')[^1][..^4]; // splits the file path and gets the name of the file, then removes the file extension
         }
     }
 
