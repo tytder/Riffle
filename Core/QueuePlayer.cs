@@ -5,7 +5,7 @@ using System.Linq;
 using Riffle.Core;
 using Riffle.Core.Audio;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Core;
 
 public class QueuePlayer
 {
@@ -26,7 +26,7 @@ public class QueuePlayer
         SkipToNextSong();
     }
 
-    public void PlayFrom(Song song, List<Song> playlist)
+    public void PlayFrom(Song song, List<Song> playlist) // TODO: work with id instead of whole playlist
     {
         if (song == null || playlist == null || !playlist.Contains(song)) return;
 
@@ -65,7 +65,7 @@ public class QueuePlayer
             Queue.Enqueue(prevSong);
         }
 
-        if (Queue.Count == 0)
+        /*if (Queue.Count == 0)
         {
             if (Loop)
             {
@@ -76,7 +76,7 @@ public class QueuePlayer
                 _player.Stop();
                 return;
             }
-        }
+        }*/
 
         CurrentSong = Queue.Peek();
         _player.Play(CurrentSong);

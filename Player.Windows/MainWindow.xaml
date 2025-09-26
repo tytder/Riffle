@@ -313,9 +313,11 @@
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Center" 
                         Margin="5"
-                        IsMoveToPointEnabled="True"
+                        IsMoveToPointEnabled="False"
                         MouseLeftButtonUp="OnMouseLeftButtonUp"
                         MouseLeftButtonDown="OnMouseLeftButtonDown"
+                        PreviewMouseMove="SeekBar_PreviewMouseMove"
+                        PreviewMouseLeftButtonUp="SeekBar_PreviewMouseLeftButtonUp"
                         ValueChanged="SeekBar_ValueChanged"
                         >
                         </Slider>

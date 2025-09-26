@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Forms;
 using System.Windows.Input;
@@ -13,6 +16,8 @@ using System.Windows.Threading;
 using Riffle.Core;
 using Riffle.Player.Windows.Services;
 using Riffle.Core.Audio;
+using ListView = System.Windows.Controls.ListView;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace Riffle.Player.Windows
 {
@@ -36,6 +41,7 @@ namespace Riffle.Player.Windows
                 }
             }
         }
+
         
         private Playlist _currentPlaylistPlaying;
         public Playlist CurrentPlaylistPlaying
@@ -64,11 +70,33 @@ namespace Riffle.Player.Windows
             }
         }
         
+        private bool _isTeleportingSeekBarThumb;
+        private bool IsTeleportingSeekBarThumb
+        {
+            get => _isTeleportingSeekBarThumb;
+            set
+            {
+                _isTeleportingSeekBarThumb = value;
+            }
+        }
+
+        private bool _seekBarWasRecentlyAutoUpdated;
+        private bool SeekBarWasRecentlyAutoUpdated
+        {
+            get => _seekBarWasRecentlyAutoUpdated;
+            set
+            {
+                _seekBarWasRecentlyAutoUpdated = value;
+            }
+        }
+        
         private readonly Playlist _allSongsPlaylist;
         private bool _isQueueOpen;
         private Color _buttonInactiveColor;
         
         public Track Track { get; set; }
+        
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -106,25 +134,11 @@ namespace Riffle.Player.Windows
             BtnLoop.Background = new SolidColorBrush(_buttonInactiveColor);
             BtnShuffle.Background = new SolidColorBrush(_buttonInactiveColor);
         }
-
-        private bool _isDraggingSeekBarThumb;
-        private bool IsDraggingSeekBarThumb
+        
+        private static readonly Stopwatch _logSw = Stopwatch.StartNew();
+        private void Log(string msg)
         {
-            get => _isDraggingSeekBarThumb;
-            set
-            {
-                _isDraggingSeekBarThumb = value;
-            }
-        }
-
-        private bool _seekBarWasRecentlyAutoUpdated;
-        private bool SeekBarWasRecentlyAutoUpdated
-        {
-            get => _seekBarWasRecentlyAutoUpdated;
-            set
-            {
-                _seekBarWasRecentlyAutoUpdated = value;
-            }
+            System.Diagnostics.Debug.WriteLine($"[{_logSw.ElapsedMilliseconds:0000}ms][T{Thread.CurrentThread.ManagedThreadId}] {msg}");
         }
 
         
@@ -132,9 +146,49 @@ namespace Riffle.Player.Windows
         {
             SeekBar.ApplyTemplate(); // ensure the template is created
             Track = (Track)SeekBar.Template.FindName("PART_Track", SeekBar);
+            
+            if (Track?.Thumb != null)
+            {
+                //Track.Thumb.DragCompleted += ThumbOnDragCompleted;
+                //Track.Thumb.DragDelta += ThumbOnDragDelta;
+                
+                /*
+                var t = Track.Thumb;
+                t.PreviewMouseLeftButtonDown += (s, e) => Log($"Thumb.PreviewMouseLeftButtonDown   Handled={e.Handled} IsDragging={t.IsDragging}");
+                t.MouseLeftButtonDown         += (s, e) => Log($"Thumb.MouseLeftButtonDown         Handled={e.Handled} IsDragging={t.IsDragging}");
+                t.DragStarted                 += (s, e) => Log("Thumb.DragStarted");
+                t.DragDelta                   += (s, e) => Log($"Thumb.DragDelta dx={e.HorizontalChange:0.##} dy={e.VerticalChange:0.##}");
+                t.DragCompleted               += (s, e) => Log($"Thumb.DragCompleted -> SeekBar.Value={SeekBar.Value}");
+                t.GotMouseCapture             += (s, e) => Log($"Thumb.GotMouseCapture   Mouse.Captured={Mouse.Captured?.GetType().Name ?? "null"}");
+                t.LostMouseCapture            += (s, e) => Log($"Thumb.LostMouseCapture  Mouse.Captured={Mouse.Captured?.GetType().Name ?? "null"}");
+                */
+
+            }
+
+            // Handle clicks on the track (not just the thumb)
+            //SeekBar.PreviewMouseLeftButtonDown += SeekBar_PreviewMouseLeftButtonDown;
+            SeekBar.AddHandler(
+                UIElement.MouseLeftButtonDownEvent,
+                new MouseButtonEventHandler(SeekBar_PreviewMouseLeftButtonDown),
+                handledEventsToo: true);
+            /*SeekBar.PreviewMouseLeftButtonDown += (s, e) => Log($"Slider.PreviewMouseLeftButtonDown  OrigSource={e.OriginalSource.GetType().Name} Handled={e.Handled}");
+            //SeekBar.PreviewMouseMove           += (s, e) => { if (e.LeftButton == MouseButtonState.Pressed) Log("Slider.PreviewMouseMove (LMB down)"); };
+            this.MouseLeftButtonUp             += (s, e) => Log($"Window.MouseLeftButtonUp  Mouse.Captured={Mouse.Captured?.GetType().Name ?? "null"}");
+
+            InputManager.Current.PreProcessInput += (s, e) =>
+            {
+                var input = e.StagingItem.Input;
+                if (input is MouseButtonEventArgs mbe)
+                    Log($"RAW PreProcessInput: MouseButton {mbe.ChangedButton} State? {mbe.ButtonState} Handled={mbe.Handled} Timestamp={mbe.Timestamp}");
+                /*else if (input is MouseEventArgs me)
+                    Log($"RAW PreProcessInput: MouseMove  LeftButton={me.LeftButton}");#1#
+            };*/
+            
+            /*Track.Thumb.DragCompleted += ThumbOnDragCompleted;
+            Track.Thumb.DragDelta += ThumbOnDragDelta;
             if (Track.Thumb != null)
             {
-                Track.Thumb.PreviewMouseLeftButtonDown += (s, args) =>
+                Track.PreviewMouseLeftButtonDown += (s, args) =>
                 {
                     // Calculate clicked position
                     Point pos = args.GetPosition(Track);
@@ -143,12 +197,89 @@ namespace Riffle.Player.Windows
                     // Set value immediately so the Thumb is in the correct place before drag starts
                     SeekBar.Value = newValue;
 
-                    // Now let the Thumb continue dragging normally
+                    Track.Thumb.CaptureMouse();
+                    Track.Thumb.RaiseEvent(
+                        new MouseButtonEventArgs(args.MouseDevice, args.Timestamp, MouseButton.Left)
+                        {
+                            RoutedEvent = MouseLeftButtonDownEvent,
+                            Source = args.Source,
+                        });
+                    
                     args.Handled = false;
                 };
-            }
+            }*/
         }
+
+        private bool _isDraggingSeekBar;
         
+        private void SeekBar_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            /*if (Track == null || Track.Thumb == null)
+                return;
+
+            // Move Thumb to the Mouse location
+
+            Point pt = e.MouseDevice.GetPosition(Track);
+
+            double newValue = Track.ValueFromPoint(pt);
+            SeekBar.Value = newValue;
+            
+            // Simulate drag start: forward the MouseDown to the thumb
+            Track.Thumb.RaiseEvent(
+                new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left)
+                {
+                    RoutedEvent = MouseLeftButtonDownEvent,
+                    Source = e.Source
+                });
+
+            // Ensure thumb has mouse capture
+            //Track.Thumb.CaptureMouse();
+
+            e.Handled = true;*/
+            var slider = (Slider)sender;
+            Point clickPoint = e.GetPosition(slider);
+
+            // Calculate new value
+            double ratio = clickPoint.X / slider.ActualWidth;
+            slider.Value = slider.Minimum + (slider.Maximum - slider.Minimum) * ratio;
+
+            // Start manual drag
+            _isDraggingSeekBar = true;
+            Mouse.Capture(slider);
+            e.Handled = true;
+        }
+
+        private void SeekBar_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isDraggingSeekBar) return;
+            var slider = (Slider)sender;
+            Point pos = e.GetPosition(slider);
+            double ratio = pos.X / slider.ActualWidth;
+            slider.Value = slider.Minimum + (slider.Maximum - slider.Minimum) * ratio;
+            if (_player.HasTrackLoaded)
+                TxtCurrentTime.Text = slider.Value.ToMmSs();
+        }
+
+        private void SeekBar_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!_isDraggingSeekBar) return;
+            _isDraggingSeekBar = false;
+            _isTeleportingSeekBarThumb = false;
+            Mouse.Capture(null);
+            _player.Seek(TimeSpan.FromSeconds(SeekBar.Value));
+        }
+
+
+        private void ThumbOnDragDelta(object sender, DragDeltaEventArgs e)
+        {
+            if (_player.HasTrackLoaded)
+                TxtCurrentTime.Text = _player.CurrentTime.TotalSeconds.ToMmSs();
+        }
+
+        private void ThumbOnDragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            _player.Seek(TimeSpan.FromSeconds(SeekBar.Value));
+        }
 
 
         private void Player_TrackLoaded(object sender, Song song)
@@ -158,7 +289,7 @@ namespace Riffle.Player.Windows
             SeekBar.Value = 0;
             TxtSongTitle.Text = song.Title;
             TxtArtistName.Text = song.Artist;
-            _isDraggingSeekBarThumb = false;
+            IsTeleportingSeekBarThumb = false;
             QueueListView.ItemsSource = _queuePlayer.Queue;
         }
 
@@ -166,10 +297,10 @@ namespace Riffle.Player.Windows
         {
             if (_player.HasTrackLoaded) // TODO: later on just preload
             {
-                if (!IsDraggingSeekBarThumb)
+                if (!_isDraggingSeekBar && !IsTeleportingSeekBarThumb)
                 {
-                    SeekBar.Value = _player.CurrentTime.TotalSeconds;
                     SeekBarWasRecentlyAutoUpdated = true;
+                    SeekBar.Value = _player.CurrentTime.TotalSeconds;
                 }
             }
         }
@@ -190,7 +321,7 @@ namespace Riffle.Player.Windows
 
         private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            Mouse.Capture(null);
+            /*Mouse.Capture(null);
             if (IsDraggingSeekBarThumb)
             {
                 IsDraggingSeekBarThumb = false;
@@ -199,25 +330,25 @@ namespace Riffle.Player.Windows
                     _player.Seek(TimeSpan.FromSeconds(SeekBar.Value));
                     TxtCurrentTime.Text = _player.CurrentTime.TotalSeconds.ToMmSs();
                 }
-            }
+            }*/
         }
 
         private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            Mouse.Capture(Track.Thumb);
+            /*Mouse.Capture(Track.Thumb);
             Track.Thumb.RaiseEvent(
                 new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left)
                 {
                     RoutedEvent = MouseLeftButtonDownEvent,
                     Source = e.Source,
-                });
+                });*/
         }
 
         private void SeekBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (!SeekBarWasRecentlyAutoUpdated)
+            if (!SeekBarWasRecentlyAutoUpdated && !_isDraggingSeekBar)
             {
-                IsDraggingSeekBarThumb = true;
+                IsTeleportingSeekBarThumb = true;
             }
             if (_player.HasTrackLoaded)
                 TxtCurrentTime.Text = _player.CurrentTime.TotalSeconds.ToMmSs();
@@ -395,6 +526,7 @@ namespace Riffle.Player.Windows
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
     }
 }
 

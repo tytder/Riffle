@@ -41,12 +41,4 @@ public partial class SongImportData : Window
         DialogResult = false;
         Close();
     }
-    
-
-    private TimeSpan GetDuration(string filePath)
-    {
-        var file = TagLib.File.Create(filePath);
-        return file.Properties.Duration;
-    }
-
 }
