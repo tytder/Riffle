@@ -49,9 +49,12 @@
                 x:Name="PlaylistList"
                 SizeChanged="PlaylistList_OnSizeChanged"
                 Grid.Column="0"
-                MouseDoubleClick="PlaylistList_OnMouseDoubleClick">
+                MouseDoubleClick="PlaylistList_OnMouseDoubleClick"
+                ItemsSource="{Binding Playlists}"
+                SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}"
+                >
             >
-            <ListView.ItemContainerStyle>
+                <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Style.Triggers>
                             <DataTrigger Value="True">
@@ -73,7 +76,8 @@
                 </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView x:Name="PlaylistView">
-                        <GridViewColumn Width="200">
+                        <GridViewColumn Width="200"
+                                        DisplayMemberBinding="{Binding Name}" >
                             <GridViewColumn.Header>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
                                     <TextBlock Text="Playlists" VerticalAlignment="Center" Margin="0,0,5,0"/>
@@ -87,11 +91,11 @@
                                         Click="RemovePlaylist_Click"/>
                                 </StackPanel>
                             </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
+                            <!--<GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name}" />
                                 </DataTemplate>
-                            </GridViewColumn.CellTemplate>
+                            </GridViewColumn.CellTemplate>-->
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
@@ -103,59 +107,11 @@
                 SizeChanged="PlaylistContent_OnSizeChanged"
                 SelectionMode="Single"
                 MouseDoubleClick="PlaylistContent_OnMouseDoubleClick">
+                ItemsSource="{Binding Songs}"
                 >
-                <!--<ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                <Setter Property="Foreground" Value="Green"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListView.ItemContainerStyle>-->
-                
-                
-                <!--<ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Title}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Style.Triggers>
-                                        <DataTrigger Value="True">
-                                            <DataTrigger.Binding>
-                                                <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                                    <Binding /> ~1~ the current item @1@
-                                                    <Binding Path="DataContext.(windows:MainWindow.CurrentSong)" 
-                                                             RelativeSource="{RelativeSource AncestorType=Window}" />
-                                                </MultiBinding>
-                                            </DataTrigger.Binding>
-                                            <Setter Property="Foreground" Value="Green"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>-->
-                
-                
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Style.Triggers>
-                            <!--<DataTrigger Value="True">
-                                <DataTrigger.Binding>
-                                    <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                        ~1~ current item @1@
-                                        <Binding/>
-                                        ~1~ currently playing song @1@
-                                        <Binding Path="(MainWindow)DataContext.CurrentSong"
-                                                 RelativeSource="{RelativeSource AncestorType=windows:MainWindow}"/>
-                                    </MultiBinding>
-                                </DataTrigger.Binding>
-                                <Setter Property="Foreground" Value="Green"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
-                            </DataTrigger>-->
                             <DataTrigger Value="True">
                                 <DataTrigger.Binding>
                                     <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
@@ -314,8 +270,6 @@
                         VerticalAlignment="Center" 
                         Margin="5"
                         IsMoveToPointEnabled="False"
-                        MouseLeftButtonUp="OnMouseLeftButtonUp"
-                        MouseLeftButtonDown="OnMouseLeftButtonDown"
                         PreviewMouseMove="SeekBar_PreviewMouseMove"
                         PreviewMouseLeftButtonUp="SeekBar_PreviewMouseLeftButtonUp"
                         ValueChanged="SeekBar_ValueChanged"
@@ -384,71 +338,9 @@
                     Grid.Column="1"
                     Grid.Row="1"
                     IsMoveToPointEnabled="True"
-                    MouseLeftButtonDown="OnMouseLeftButtonDown"
-                    MouseLeftButtonUp="OnMouseLeftButtonUp"
                     ValueChanged="VolumeBar_ValueChanged"
                     />
             </Grid>
         </Grid>
     </Grid>
 </Window>
-    <!--<Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <StackPanel 
-            VerticalAlignment="Bottom" 
-            HorizontalAlignment="Center"
-            Grid.Column="1"
-            >
-            <Button Content="Play" Width="100" Margin="5" Click="OnPlay"/>
-            <Button 
-                x:Name="BtnPauseResume" Width="100" Margin="5"
-                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                    Click="OnPauseResume">
-                Pause
-            </Button>
-            <Button Content="Stop" Width="100" Margin="5" Click="OnStop"/>
-            <Slider x:Name="SeekBar" 
-                    Minimum="0" 
-                    Maximum="100" 
-                    IsMoveToPointEnabled="True"
-                    MouseLeftButtonUp="OnMouseLeftButtonUp"
-                    ValueChanged="SeekBar_ValueChanged"
-                    Margin="0,5,0,10"
-                    HorizontalAlignment="Stretch">
-            </Slider>
-        </StackPanel>
-        <StackPanel
-            VerticalAlignment="Bottom" 
-            HorizontalAlignment="Right"
-            Grid.Column="2"
-            Margin="5
-            "
-            >
-            <TextBlock 
-                HorizontalAlignment="Center"
-                VerticalAlignment="Bottom"
-                >
-                100 %
-            </TextBlock>
-            <Slider x:Name="VolumeBar" 
-                    Minimum="0" 
-                    Maximum="150"
-                    Value="100"
-                    IsMoveToPointEnabled="True"
-                    MouseLeftButtonUp="OnMouseLeftButtonUp"
-                    ValueChanged="VolumeBar_ValueChanged"
-                    Width="80" 
-                    Orientation="Horizontal"
-                    Margin="5"
-                    >
-            </Slider>
-            
-        </StackPanel>
-    </Grid>-->

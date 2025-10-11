@@ -7,13 +7,12 @@ public class Playlist
     public Playlist(string name)
     {
         Name = name;
-        Id = Guid.NewGuid();
     }
 
-    public string Name { get; }
-    public Guid Id { get; }
+    public string Name { get; private set; } = "";
+    public Guid Id { get; private set; } = Guid.NewGuid();
     
-    public ObservableCollection<Song> PlaylistItems { get; set; } = new ObservableCollection<Song>();
+    public ObservableCollection<Song> PlaylistItems { get; private set; } = new ObservableCollection<Song>();
 
     public override bool Equals(object? obj)
     {
