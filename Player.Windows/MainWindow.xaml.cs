@@ -13,6 +13,8 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Data;
+using Microsoft.EntityFrameworkCore;
 using Riffle.Core;
 using Riffle.Player.Windows.Services;
 using Riffle.Core.Audio;
