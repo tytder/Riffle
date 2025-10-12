@@ -30,6 +30,10 @@ namespace Riffle.Player.Windows
         private readonly IAudioPlayer _player;
         private readonly MusicService _musicService;
         private readonly QueuePlayer _queuePlayer;
+        private readonly SidebarViewModel _sidebarVm;
+        private readonly SongsViewModel _songsVm;
+        private readonly MainWindowViewModel _viewModel;
+        
         
         private Song _currentSongPlaying;
         public Song CurrentSongPlaying
@@ -102,6 +106,20 @@ namespace Riffle.Player.Windows
         public MainWindow(MusicService musicService)
         {
             InitializeComponent();
+
+            _musicService = musicService;
+            _player = new NAudioAudioPlayer();
+            _viewModel = new MainWindowViewModel(musicService);
+            DataContext = _viewModel;
+
+            DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(200) };
+            timer.Tick += Timer_Tick;
+            timer.Start();
+
+            _player.TrackLoaded += Player_TrackLoaded;
+            Loaded += OnLoaded;
+            
+            /*InitializeComponent();
             _player = new NAudioAudioPlayer();
             _musicService = musicService;
             
@@ -126,26 +144,7 @@ namespace Riffle.Player.Windows
             // Set current playlist
             CurrentPlaylistOpen = null;
             PlaylistContent.Items.Clear();
-            PlaylistContent.ItemsSource = CurrentPlaylistOpen?.PlaylistItems ?? new ObservableCollection<Song>(_musicService.GetAllSongs());
-            
-            /*PlaylistList.Items.Clear();
-            PlaylistList.ItemsSource = PlaylistCollection;
-            _allSongsPlaylist = new Playlist("All Songs");
-            PlaylistCollection.Add(_allSongsPlaylist);
-            PlaylistList.SelectedIndex = 0;
-            
-            // Setting current playlist
-            CurrentPlaylistOpen = _allSongsPlaylist;
-            PlaylistContent.Items.Clear();
-            PlaylistContent.ItemsSource = CurrentPlaylistOpen.PlaylistItems;
-            
-            // Setting queue list
-            _queuePlayer = new QueuePlayer(_player);
-            QueueListView.Items.Clear();
-            
-            _buttonInactiveColor = Color.FromRgb(80, 80, 80);
-            BtnLoop.Background = new SolidColorBrush(_buttonInactiveColor);
-            BtnShuffle.Background = new SolidColorBrush(_buttonInactiveColor);*/
+            PlaylistContent.ItemsSource = CurrentPlaylistOpen?.PlaylistItems ?? new ObservableCollection<Song>(_musicService.GetAllSongs());*/
         }
         
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -272,51 +271,42 @@ namespace Riffle.Player.Windows
         private void ShowSongMetadataDialog(string filePath)
         {
             var tagFile = TagLib.File.Create(filePath);
-            
+
             string suggestedTitle = !string.IsNullOrEmpty(tagFile.Tag.Title)
                 ? tagFile.Tag.Title
                 : System.IO.Path.GetFileNameWithoutExtension(filePath);
-            
+
             string suggestedArtist = (tagFile.Tag.Performers != null && tagFile.Tag.Performers.Length > 0)
                 ? tagFile.Tag.Performers[0]
                 : string.Empty;
-            
+
             SongImportData metadataWindow = new SongImportData
             {
                 FilePath = System.IO.Path.GetFileName(filePath),
             };
-            
+
             metadataWindow.TxtSongTitle.Text = suggestedTitle;
             metadataWindow.TxtArtistName.Text = suggestedArtist;
-            
+
             if (metadataWindow.ShowDialog() == true)
             {
                 string title = metadataWindow.SongTitle;
                 string artist = metadataWindow.ArtistName;
                 TimeSpan duration = tagFile.Properties.Duration;
 
-                if (PlaylistList.SelectedItem is Playlist currentOpenPlaylist)
+                if (PlaylistList.SelectedItem is PlaylistViewModel selectedVm)
                 {
-                
-                    Song newSong = new Song
-                    (
-                        title,
-                        artist,
-                        duration,
-                        filePath
-                    );
-                    
-                    _musicService.AddSong(newSong, currentOpenPlaylist);
-                
-                    //currentOpenPlaylist.PlaylistItems.Add(newSong);
-                    
-                    /*if (!Equals(currentOpenPlaylist, _allSongsPlaylist))
-                    {
-                        if (!_allSongsPlaylist.PlaylistItems.Contains(newSong))
-                            _allSongsPlaylist.PlaylistItems.Add(newSong);
-                    }*/
+                    // The actual playlist, or null for "All Songs"
+                    Playlist? playlist = selectedVm.Playlist;
+
+                    Song newSong = new Song(title, artist, duration, filePath);
+
+                    _musicService.AddSong(newSong, playlist);
+
+                    // Refresh the songs in the viewmodel
+                    _viewModel.Songs.RefreshSongs();
+                    _viewModel.Songs.LoadSongs(_viewModel.SelectedPlaylist);
                 }
-                
             }
         }
 
@@ -332,7 +322,34 @@ namespace Riffle.Player.Windows
 
         private void PlaylistContent_OnMouseDoubleClick(object sender, MouseButtonEventArgs mouseButtonEventArgs)
         {
-            if (PlaylistContent.SelectedItem is Song selectedSong)
+            if (PlaylistContent.SelectedItem is not Song selectedSong) return;
+
+            // Determine which playlist view-model is currently selected in the sidebar
+            var selectedVm = PlaylistList.SelectedItem as PlaylistViewModel;
+
+            // Decide the concrete list of songs to play:
+            // - if selectedVm is null or represents "All Songs" (Playlist == null) -> use the songs currently shown in the SongsViewModel
+            // - otherwise ask the MusicService for the songs that belong to that playlist
+            List<Song> playListSongs;
+            if (selectedVm == null || selectedVm.Playlist == null)
+            {
+                // SongsViewModel.Songs is an ObservableCollection<Song>, convert to list
+                playListSongs = _songsVm.Songs.ToList();
+            }
+            else
+            {
+                // Use MusicService to get the canonical list for the playlist (ensure DB-backed)
+                playListSongs = _musicService.GetSongsForPlaylist(selectedVm.Playlist);
+            }
+
+            // Start playback
+            _queuePlayer.PlayFrom(selectedSong, playListSongs);
+
+            // Update "currently playing" state in the MainWindowViewModel
+            _viewModel.CurrentSongPlaying = selectedSong;
+            _viewModel.SelectedPlaylist = selectedVm; // null means "All Songs"
+            
+            /*if (PlaylistContent.SelectedItem is Song selectedSong)
             {
                 _queuePlayer.PlayFrom(selectedSong, CurrentPlaylistOpen.PlaylistItems.ToList());
                 
@@ -341,7 +358,7 @@ namespace Riffle.Player.Windows
                 {
                     CurrentPlaylistPlaying = currentOpenPlaylist;
                 }
-            }
+            }*/
         }
 
         private void PlaylistList_OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -353,11 +370,14 @@ namespace Riffle.Player.Windows
 
         private void PlaylistList_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (PlaylistList.SelectedItem is Playlist selectedPlaylist)
+            if (PlaylistList.SelectedItem is PlaylistViewModel selectedVm)
+                _songsVm.LoadSongs(selectedVm);
+            
+            /*if (PlaylistList.SelectedItem is Playlist selectedPlaylist)
             {
                 PlaylistContent.ItemsSource = selectedPlaylist.PlaylistItems;
                 CurrentPlaylistOpen = selectedPlaylist;
-            }
+            }*/
         }
 
         private void AddPlaylist_Click(object sender, RoutedEventArgs e)
@@ -374,7 +394,26 @@ namespace Riffle.Player.Windows
 
         private void RemovePlaylist_Click(object sender, RoutedEventArgs e)
         {
-            if (PlaylistList.SelectedItem is Playlist selectedPlaylist)
+            if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
+
+            // If this is the "All Songs" pseudo-entry, do nothing
+            if (selectedVm.Playlist == null) return;
+
+            var deletePlaylistWindow = new DeletePlaylistWindow();
+            if (deletePlaylistWindow.ShowDialog() != true) return;
+
+            // Delete from database via service (implement if missing)
+            _musicService.DeletePlaylist(selectedVm.Playlist);
+
+            // Refresh the sidebar list and select "All Songs"
+            _viewModel.Sidebar.RefreshPlaylists();
+
+            // Try to select the "All Songs" entry in the sidebar
+            var allSongsVm = _viewModel.Sidebar.Playlists.FirstOrDefault(p => p.Playlist == null);
+            if (allSongsVm != null)
+                _viewModel.SelectedPlaylist = allSongsVm;
+            
+            /*if (PlaylistList.SelectedItem is Playlist selectedPlaylist)
             {
                 if (Equals(selectedPlaylist, _allSongsPlaylist)) return;
                 DeletePlaylistWindow deletePlaylistWindow = new DeletePlaylistWindow();
@@ -383,7 +422,7 @@ namespace Riffle.Player.Windows
                     PlaylistCollection.Remove(selectedPlaylist);
                     PlaylistList.SelectedItem = _allSongsPlaylist;
                 }
-            }
+            }*/
         }
 
         private void Queue_OnClick(object sender, RoutedEventArgs e)

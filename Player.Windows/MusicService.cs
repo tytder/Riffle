@@ -72,4 +72,18 @@ public class MusicService
         using var db = new MusicDbContext(_options);
         return db.Playlists.Include(p => p.PlaylistItems).ToList();
     }
+
+    public void DeletePlaylist(Playlist playlist)
+    {
+        using var db = new MusicDbContext(_options);
+        var dbPlaylist = db.Playlists.Include(p => p.PlaylistItems).FirstOrDefault(p => p.Id == playlist.Id);
+        if (dbPlaylist != null)
+        {
+            // Option 1: If join table uses explicit entity, remove its rows first.
+            // Option 2: If implicit many-to-many, remove relationships:
+            dbPlaylist.PlaylistItems.Clear();
+            db.Playlists.Remove(dbPlaylist);
+            db.SaveChanges();
+        }
+    }
 }

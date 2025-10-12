@@ -26,4 +26,10 @@ public class SidebarViewModel
             Playlists.Add(new PlaylistViewModel(p.Name, p));
         }
     }
+    
+    public void RefreshPlaylists()
+    {
+        Playlists.Clear();
+        LoadPlaylists();
+    }
 }
