@@ -9,8 +9,8 @@ public class Playlist
         Name = name;
     }
 
-    public string Name { get; private set; } = "";
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Name { get; private set; }
+    public Guid Id { get; } = Guid.NewGuid();
     
     public ObservableCollection<Song> PlaylistItems { get; private set; } = new ObservableCollection<Song>();
 

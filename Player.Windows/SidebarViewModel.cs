@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Riffle.Player.Windows;
 
@@ -31,5 +33,28 @@ public class SidebarViewModel
     {
         Playlists.Clear();
         LoadPlaylists();
+    }
+
+    public PlaylistViewModel GetPlaylist(Guid id)
+    {
+        //if (id == Guid.Empty) return Playlists.First(pl => pl.Name == "All Songs");
+        return Playlists.First(pl => IsWantedPlaylist(pl, id));
+    }
+
+    private bool IsWantedPlaylist(PlaylistViewModel playlist, Guid wantedId)
+    {
+        if (playlist.Playlist == null)
+        {
+            // if playlist was null (normally only "All Songs" playlist)
+            // and the wanted id is empty (also normally only "All Songs" playlist)
+            // then the current playlist is the wanted one, return true.
+            if (wantedId == Guid.Empty) return true; 
+            
+            // else the "All Songs" playlist is not the wanted playlist, return false.
+            return false;
+        }
+        
+        // simply check the id if the "All Songs" playlist is not the wanted playlist.
+        return playlist.Playlist.Id == wantedId;
     }
 }

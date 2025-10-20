@@ -42,7 +42,7 @@
             <!-- Playlists -->
             <ListView x:Name="PlaylistList"
                       Grid.Column="0"
-                      ItemsSource="{Binding Sidebar.Playlists}"
+                      ItemsSource="{Binding SidebarViewModel.Playlists}"
                       SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}"
                       MouseDoubleClick="PlaylistList_OnMouseDoubleClick"
                       SizeChanged="PlaylistList_OnSizeChanged">
@@ -53,8 +53,8 @@
                             <DataTrigger Value="True">
                                 <DataTrigger.Binding>
                                     <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                        <Binding Path="Playlist" /> <!-- The playlist in this row -->
-                                        <Binding Path="CurrentPlaylistPlaying"
+                                        <Binding Path="." /> <!-- The playlist in this row -->
+                                        <Binding Path="ViewModel.CurrentPlaylistPlaying"
                                                  RelativeSource="{RelativeSource AncestorType=Window}" />
                                     </MultiBinding>
                                 </DataTrigger.Binding>
@@ -85,7 +85,7 @@
             <!-- Songs -->
             <ListView x:Name="PlaylistContent"
                       Grid.Column="1"
-                      ItemsSource="{Binding Songs.Songs}"
+                      ItemsSource="{Binding SongsViewModel.Songs}"
                       MouseDoubleClick="PlaylistContent_OnMouseDoubleClick"
                       SizeChanged="PlaylistContent_OnSizeChanged">
 
@@ -96,9 +96,9 @@
                                 <DataTrigger.Binding>
                                     <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
                                         <Binding Path="." /> <!-- Song in this row -->
-                                        <Binding Path="CurrentSongPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                        <Binding Path="CurrentPlaylistOpen" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                        <Binding Path="CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                        <Binding Path="ViewModel.CurrentSongPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                        <Binding Path="ViewModel.SelectedPlaylist" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                        <Binding Path="ViewModel.CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
                                     </MultiBinding>
                                 </DataTrigger.Binding>
                                 <Setter Property="Foreground" Value="Green"/>
@@ -110,7 +110,7 @@
 
                 <ListView.View>
                     <GridView x:Name="GridView">
-                        <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="200"/>
+                        <GridViewColumn Header="Title"  DisplayMemberBinding="{Binding Title}" Width="200"/>
                         <GridViewColumn Header="Artist" DisplayMemberBinding="{Binding Artist}" Width="100"/>
                         <GridViewColumn Header="Duration" DisplayMemberBinding="{Binding DurationDisplay}" Width="100"/>
                         <GridViewColumn Header="FilePath" DisplayMemberBinding="{Binding FilePath}" Width="200"/>

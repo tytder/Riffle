@@ -15,8 +15,8 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
         
         if (values.Length == 2)
         {
-            if (values[0] is not Playlist openPlaylist) return false;
-            if (values[1] is not Playlist playingPlaylist) return false;
+            if (values[0] is not PlaylistViewModel openPlaylist) return false;
+            if (values[1] is not PlaylistViewModel playingPlaylist) return false;
 
             return Equals(openPlaylist, playingPlaylist);
         }
@@ -25,8 +25,8 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
         {
             if (values[0] is not Song thisRowSong) return false;
             if (values[1] is not Song currentSong) return false;
-            if (values[2] is not Playlist openPlaylist) return false;
-            if (values[3] is not Playlist playingPlaylist) return false;
+            if (values[2] is not PlaylistViewModel openPlaylist) return false;
+            if (values[3] is not PlaylistViewModel playingPlaylist) return false;
 
             // Highlight if the song matches AND the playlist currently being viewed is the playlist thats playing
             return Equals(thisRowSong, currentSong) && Equals(openPlaylist, playingPlaylist);

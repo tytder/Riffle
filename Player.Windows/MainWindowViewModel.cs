@@ -9,8 +9,8 @@ public class MainWindowViewModel : INotifyPropertyChanged
 {
     private readonly MusicService _musicService;
 
-    public SidebarViewModel Sidebar { get; }
-    public SongsViewModel Songs { get; }
+    public SidebarViewModel SidebarViewModel { get; }
+    public SongsViewModel SongsViewModel { get; }
 
     private PlaylistViewModel? _selectedPlaylist;
     public PlaylistViewModel? SelectedPlaylist
@@ -18,11 +18,25 @@ public class MainWindowViewModel : INotifyPropertyChanged
         get => _selectedPlaylist;
         set
         {
-            if (_selectedPlaylist != value)
+            if (!Equals(_selectedPlaylist, value))
             {
                 _selectedPlaylist = value;
                 OnPropertyChanged();
-                Songs.LoadSongs(value!);
+                SongsViewModel.LoadSongs(value!);
+            }
+        }
+    }
+
+    private PlaylistViewModel? _currentPlaylistPlaying;
+    public PlaylistViewModel? CurrentPlaylistPlaying
+    {
+        get => _currentPlaylistPlaying;
+        set
+        {
+            if (!Equals(_currentPlaylistPlaying, value))
+            {
+                _currentPlaylistPlaying = value;
+                OnPropertyChanged();
             }
         }
     }
@@ -33,7 +47,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         get => _currentSongPlaying;
         set
         {
-            if (_currentSongPlaying != value)
+            if (!Equals(_currentSongPlaying, value))
             {
                 _currentSongPlaying = value;
                 OnPropertyChanged();
@@ -44,8 +58,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public MainWindowViewModel(MusicService musicService)
     {
         _musicService = musicService;
-        Sidebar = new SidebarViewModel(musicService);
-        Songs = new SongsViewModel(musicService);
+        SidebarViewModel = new SidebarViewModel(musicService);
+        SongsViewModel = new SongsViewModel(musicService);
+        SelectedPlaylist = SidebarViewModel.Playlists[0];
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using Riffle.Core.Audio;
 
 namespace Riffle.Player.Windows;
@@ -37,4 +39,6 @@ public class SongsViewModel
             Songs.Add(song);
         }
     }
+
+    public List<Song> GetAllSongs() => Songs.ToList();
 }

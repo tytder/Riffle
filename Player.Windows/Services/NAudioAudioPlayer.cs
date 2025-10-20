@@ -88,6 +88,7 @@ namespace Riffle.Player.Windows.Services
             _audioFile?.Dispose();
             _audioFile = null;
             HasTrackLoaded = false;
+            IsPlaying = false;
         }
     }
 }
