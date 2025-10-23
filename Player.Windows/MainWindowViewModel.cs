@@ -1,10 +1,9 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Riffle.Core.Audio;
 
 namespace Riffle.Player.Windows;
-
+#nullable enable
 public class MainWindowViewModel : INotifyPropertyChanged
 {
     private readonly MusicService _musicService;

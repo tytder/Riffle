@@ -17,7 +17,7 @@ namespace Riffle.Player.Windows
 {
     public partial class MainWindow
     {
-        private readonly NAudioAudioPlayer? _player;
+        private readonly NAudioAudioPlayer _player;
         private readonly MusicService _musicService;
         private readonly QueuePlayer _queuePlayer;
         private readonly Color _buttonInactiveColor;
@@ -46,6 +46,7 @@ namespace Riffle.Player.Windows
             timer.Start();
 
             _player.TrackLoaded += Player_TrackLoaded;
+            _player.StopAllCalled += OnStopCalled;
             Loaded += OnLoaded;
             
             _buttonInactiveColor = Color.FromRgb(80, 80, 80);
@@ -78,6 +79,12 @@ namespace Riffle.Player.Windows
             CurrentPlaylistOpen = null;
             PlaylistContent.Items.Clear();
             PlaylistContent.ItemsSource = CurrentPlaylistOpen?.PlaylistItems ?? new ObservableCollection<Song>(_musicService.GetAllSongs());*/
+        }
+        
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _player.Dispose();
         }
         
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -115,7 +122,7 @@ namespace Riffle.Player.Windows
             Point pos = e.GetPosition(slider);
             double ratio = pos.X / slider.ActualWidth;
             slider.Value = slider.Minimum + (slider.Maximum - slider.Minimum) * ratio;
-            if (_player?.HasTrackLoaded ?? false) TxtCurrentTime.Text = slider.Value.ToMmSs();
+            if (_player.HasTrackLoaded) TxtCurrentTime.Text = slider.Value.ToMmSs();
         }
 
         private void SeekBar_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -124,10 +131,10 @@ namespace Riffle.Player.Windows
             _isDraggingSeekBar = false;
             _isTeleportingSeekBarThumb = false;
             Mouse.Capture(null);
-            _player?.Seek(TimeSpan.FromSeconds(SeekBar.Value));
+            _player.Seek(TimeSpan.FromSeconds(SeekBar.Value));
         }
 
-        private void Player_TrackLoaded(object? sender, Song song)
+        private void Player_TrackLoaded(Song song)
         {
             TxtTotalTime.Text = song.Duration.TotalSeconds.ToMmSs();
             SeekBar.Maximum = song.Duration.TotalSeconds;
@@ -140,7 +147,7 @@ namespace Riffle.Player.Windows
 
         private void Timer_Tick(object? sender, EventArgs e)
         {
-            if (!_player?.HasTrackLoaded ?? true) return;
+            if (!_player.HasTrackLoaded) return;
             if (_isDraggingSeekBar || _isTeleportingSeekBarThumb) return;
             _seekBarWasRecentlyAutoUpdated = true;
             SeekBar.Value = _player.CurrentTime.TotalSeconds;
@@ -148,7 +155,6 @@ namespace Riffle.Player.Windows
 
         private void OnPauseResume(object sender, RoutedEventArgs e)
         {
-            if (_player == null) return;
             if (_player.IsPlaying)
             {
                 _player.Pause();
@@ -167,14 +173,14 @@ namespace Riffle.Player.Windows
             {
                 _isTeleportingSeekBarThumb = true;
             }
-            if (_player?.HasTrackLoaded ?? false) TxtCurrentTime.Text = _player.CurrentTime.TotalSeconds.ToMmSs();
+            if (_player.HasTrackLoaded) TxtCurrentTime.Text = _player.CurrentTime.TotalSeconds.ToMmSs();
             _seekBarWasRecentlyAutoUpdated = false;
         }
 
         private void VolumeBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (_player == null) return;
-            _player.Volume = (float)VolumeBar.Value;
+            if (!IsLoaded) return;
+            _player.Volume = (float)VolumeBar.Value / 100;
             TxtVolumePercentage.Text = ((int)VolumeBar.Value) + "%";
         }
 
@@ -228,7 +234,6 @@ namespace Riffle.Player.Windows
             ViewModel.SongsViewModel.RefreshSongs();
             ViewModel.SongsViewModel.LoadSongs(ViewModel.SelectedPlaylist);
 
-            if (_player == null) return;
             if (_player.IsPlaying) return; // if no track currently playing, switch to imported song.
             PlaySong(newSong);
         }
@@ -366,6 +371,15 @@ namespace Riffle.Player.Windows
         private void BtnPreviousSong_OnClick(object sender, RoutedEventArgs e)
         {
             _queuePlayer.SkipToPrevSong();
+        }
+
+        private void OnStopCalled()
+        {
+            TxtSongTitle.Text = _player.SongTitle;
+            TxtCurrentTime.Text =  _player.CurrentTime.TotalSeconds.ToMmSs();
+            TxtTotalTime.Text  = _player.TotalTime.TotalSeconds.ToMmSs();
+            TxtArtistName.Text = "";
+            SeekBar.Value = 0;
         }
     }
 }

@@ -5,15 +5,16 @@
         void Play(Song song);
         void Pause();
         void Resume();
-        void Stop();
+        void StopAll();
         bool IsPlaying { get; set; }
         bool HasTrackLoaded { get; set; }
         TimeSpan CurrentTime { get; }
         TimeSpan TotalTime { get; }
         float Volume { get; set; }
         string SongTitle { get; }
-        event EventHandler<Song>? TrackLoaded;
         void Seek(TimeSpan fromSeconds);
-        event EventHandler? TrackEnded;
+        event Action<Song> TrackLoaded;
+        event Action TrackEnded;
+        event Action StopAllCalled;
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using Riffle.Core.Audio;
 
 namespace Riffle.Player.Windows;
-
+#nullable enable
 public class SongsViewModel
 {
     private readonly MusicService _musicService;
@@ -17,7 +17,7 @@ public class SongsViewModel
         _musicService = musicService;
     }
 
-    public void LoadSongs(PlaylistViewModel playlistVm)
+    public void LoadSongs(PlaylistViewModel? playlistVm)
     {
         _currentPlaylistVm = playlistVm;
         RefreshSongs();

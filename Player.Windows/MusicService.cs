@@ -6,6 +6,7 @@ using Riffle.Core.Audio;
 
 namespace Riffle.Player.Windows;
 
+#nullable enable
 public class MusicService
 {
     private readonly DbContextOptions<MusicDbContext> _options;
