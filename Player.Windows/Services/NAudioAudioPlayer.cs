@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows;
 using Riffle.Core.Audio;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
@@ -103,7 +104,7 @@ namespace Riffle.Player.Windows.Services
         
         private void OnPlaybackStopped(object? sender, SampleProviderEventArgs e)
         {
-            TrackEnded.Invoke();
+            Application.Current.Dispatcher.BeginInvoke(() => TrackEnded.Invoke());
         }
 
         public void Pause()
