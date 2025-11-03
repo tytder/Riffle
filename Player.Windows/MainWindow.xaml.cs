@@ -27,6 +27,7 @@ namespace Riffle.Player.Windows
         private bool _isTeleportingSeekBarThumb;
 
         private bool _seekBarWasRecentlyAutoUpdated;
+        private bool _isDraggingSeekBar;
         
         private bool _isQueueOpen;
         
@@ -97,9 +98,30 @@ namespace Riffle.Player.Windows
                 new MouseButtonEventHandler(SeekBar_PreviewMouseLeftButtonDown),
                 handledEventsToo: true);
         }
+        
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
 
-        private bool _isDraggingSeekBar;
+        private void Maximize_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
 
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+        
+        private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+                DragMove();
+        }
+        
         private void SeekBar_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var slider = (Slider)sender;
