@@ -1,4 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Riffle.Core.Audio;
 
@@ -52,6 +55,17 @@ public class MainWindowViewModel : INotifyPropertyChanged
                 OnPropertyChanged();
             }
         }
+    }
+
+    public string SelectedPlaylistInfo => GetPlaylistInfo();
+
+    private string GetPlaylistInfo()
+    {
+        var playlist = SelectedPlaylist?.Playlist?.PlaylistItems.ToList();
+        if (playlist == null) playlist = _musicService.GetAllSongs();
+        var count = playlist.Count;
+        var totalDuration = TimeSpan.FromSeconds(playlist.Sum(s => s.Duration.TotalSeconds));
+        return $"{count} songs, {(int)totalDuration.TotalHours} hr {totalDuration.Minutes} min";
     }
 
     public MainWindowViewModel(MusicService musicService)

@@ -29,4 +29,9 @@ public class PlaylistViewModel
         if (Playlist == null) return Guid.Empty.GetHashCode();
         return Playlist.GetHashCode();
     }
+
+    public Song? GetFirstSong()
+    {
+        return Playlist?.PlaylistItems[0]; // TODO: take into account shuffle settings.
+    }
 }

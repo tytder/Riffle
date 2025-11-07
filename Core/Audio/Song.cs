@@ -18,8 +18,8 @@ public class Song
     public string? Artist { get; private set; }
     public TimeSpan Duration { get; private set; }
     public string DurationDisplay => Duration.TotalSeconds.ToMmSs();
-    public string FilePath { get;  private set; }
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string FilePath { get; private set; }
+    public Guid Id { get; } = Guid.NewGuid();
     
     public bool IsAvailable => File.Exists(FilePath);
     

@@ -44,6 +44,7 @@
                       Grid.Column="0"
                       ItemsSource="{Binding SidebarViewModel.Playlists}"
                       SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}"
+                      SelectionChanged="PlaylistList_OnSelected"
                       MouseDoubleClick="PlaylistList_OnMouseDoubleClick"
                       SizeChanged="PlaylistList_OnSizeChanged">
 
@@ -83,40 +84,130 @@
             </ListView>
 
             <!-- Songs -->
-            <ListView x:Name="PlaylistContent"
-                      Grid.Column="1"
-                      ItemsSource="{Binding SongsViewModel.Songs}"
-                      MouseDoubleClick="PlaylistContent_OnMouseDoubleClick"
-                      SizeChanged="PlaylistContent_OnSizeChanged">
+            
+            <ScrollViewer 
+                VerticalScrollBarVisibility="Auto"
+                Grid.Column="1">
+                <StackPanel>
+                    <!-- Playlist Header -->
+                    <Border Background="#222" Padding="10,5" Margin="0,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SelectedPlaylist.Name}" 
+                                       FontSize="56" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock
+                                x:Name="PlaylistInfo"
+                                Text="0 songs, 0 hr 0 min"
+                                FontSize="14" Foreground="LightGray"/>
+                            <Grid Margin="0,5,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!--<StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">-->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                    <!--<Button 
+                                        x:Name="PlaylistPlayBtn"
+                                        Content="⏸" 
+                                        Padding="-2,-2,-2,-0.5"
+                                        FontSize="18"
+                                        Margin="0,0,10,0"
+                                        Command="{Binding PlayPlaylistCommand}" 
+                                        Width="auto" 
+                                        Click="PlaylistPlayBtn_OnBtnClick"
+                                    /> -->
+                                    <Button 
+                                        x:Name="PlaylistPlayBtn"
+                                        Content="▶" 
+                                        Padding="5,0"
+                                        FontSize="12"
+                                        Margin="0,0,10,0"
+                                        Command="{Binding PlayPlaylistCommand}" 
+                                        Width="auto" 
+                                        Click="PlaylistPlayBtn_OnBtnClick"
+                                    />
+                                    <ToggleButton Content="Shuffle" 
+                                                  IsChecked="{Binding SelectedPlaylist.IsShuffling}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBox x:Name="SearchBox"
+                                                 Width="200"
+                                                 VerticalAlignment="Center"
+                                                 Margin="0,0,8,0"
+                                                 Padding="2"
+                                                 FontSize="12">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="Foreground" Value="Gray"/>
+                                                    <Setter Property="Text" Value="Search..."/>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                                            <Setter Property="Foreground" Value="Black"/>
+                                                            <Setter Property="Text" Value=""/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                        <ComboBox ItemsSource="{Binding SortOptions}" 
+                                                  SelectedItem="{Binding SelectedSortOption}" Margin="10,0,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
 
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Style.Triggers>
-                            <DataTrigger Value="True">
-                                <DataTrigger.Binding>
-                                    <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                        <Binding Path="." /> <!-- Song in this row -->
-                                        <Binding Path="ViewModel.CurrentSongPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                        <Binding Path="ViewModel.SelectedPlaylist" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                        <Binding Path="ViewModel.CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                    </MultiBinding>
-                                </DataTrigger.Binding>
-                                <Setter Property="Foreground" Value="Green"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListView.ItemContainerStyle>
+                    <!-- Playlist Songs -->
+                    <ListView x:Name="PlaylistContent"
+                          ItemsSource="{Binding SongsViewModel.Songs}"
+                          MouseDoubleClick="PlaylistContent_OnMouseDoubleClick"
+                          SizeChanged="PlaylistContent_OnSizeChanged"
+                          AlternationCount="1000000"
+                          Height = "auto"
+                          BorderThickness="0"
+                          Padding="10,0"
+                          >
 
-                <ListView.View>
-                    <GridView x:Name="GridView">
-                        <GridViewColumn Header="Title"  DisplayMemberBinding="{Binding Title}" Width="200"/>
-                        <GridViewColumn Header="Artist" DisplayMemberBinding="{Binding Artist}" Width="100"/>
-                        <GridViewColumn Header="Duration" DisplayMemberBinding="{Binding DurationDisplay}" Width="100"/>
-                        <GridViewColumn Header="FilePath" DisplayMemberBinding="{Binding FilePath}" Width="200"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Style.Triggers>
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
+                                                <Binding Path="." /> <!-- Song in this row -->
+                                                <Binding Path="ViewModel.CurrentSongPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                <Binding Path="ViewModel.SelectedPlaylist" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                <Binding Path="ViewModel.CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="Foreground" Value="Green"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+
+                        <ListView.View>
+                            <GridView x:Name="GridView">
+                                <GridViewColumn Header="#" Width="20">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock 
+                                                Text="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListViewItem}, 
+                                                Path=(ItemsControl.AlternationIndex), Converter={StaticResource IndexToNumberConverter}}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Title"  DisplayMemberBinding="{Binding Title}" Width="200"/>
+                                <GridViewColumn Header="Artist" DisplayMemberBinding="{Binding Artist}" Width="100"/>
+                                <GridViewColumn Header="Duration" DisplayMemberBinding="{Binding DurationDisplay}" Width="100"/>
+                                <GridViewColumn Header="FilePath" DisplayMemberBinding="{Binding FilePath}" Width="200"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
 
         <Border Background="White"
@@ -186,30 +277,40 @@
                 <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button 
                         x:Name="BtnShuffle" 
-                        Content="S" 
+                        Content="🔀" 
+                        FontSize="16"
+                        Padding="-2,-2, -2 , -0.5"
                         Margin="3,5"
                         />
                     <Button
                         x:Name="BtnPreviousSong" 
-                        Content="P" 
+                        Content="⏮" 
+                        FontSize="16"
+                        Padding="-2,-2, -2 , -0.5"
                         Margin="3,5"
                         Click="BtnPreviousSong_OnClick"
                         />
                     <Button 
                         x:Name="BtnPauseResume" 
-                        Content="P" 
+                        Content="▶" 
+                        FontSize="16"
+                        Padding=".5,-2, .5, -0.5"
                         Margin="3,5"
                         Click="OnPauseResume"
                         />
                     <Button 
                         x:Name="BtnNextSong" 
-                        Content="N" 
+                        Content="⏭" 
+                        FontSize="16"
+                        Padding="-2,-2, -2 , -0.5"
                         Margin="3,5"
                         Click="BtnNextSong_OnClick"
                         />
                     <Button 
                         x:Name="BtnLoop" 
-                        Content="L" 
+                        Content="🔁" 
+                        FontSize="16"
+                        Padding="-2,-2, -2 , -0.5"
                         Margin="3,5"
                         Click="BtnLoop_OnClick"
                         Background="White"
@@ -280,14 +381,6 @@
                     Text="100%"
                     Foreground="White"
                     />
-                <TextBlock
-                    x:Name="Debug"
-                    Grid.Column="0"
-                    Grid.Row="0"
-                    HorizontalAlignment="Center"
-                    Text="N"
-                    Foreground="White"
-                />
                 <Button 
                     Content="Q" 
                     Margin="0,5" 
