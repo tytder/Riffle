@@ -362,6 +362,7 @@ namespace Riffle.Player.Windows
             double totalWidth = PlaylistContent.ActualWidth - SystemParameters.VerticalScrollBarWidth;
             
             QueueOverlay.Visibility = _isQueueOpen ?  Visibility.Visible : Visibility.Collapsed;
+            QueueWindowGridSpace.Visibility = _isQueueOpen ? Visibility.Visible : Visibility.Collapsed;
             QueueOverlayColumn.Width = _isQueueOpen ? totalWidth * 5/12 : 0;
         }
 

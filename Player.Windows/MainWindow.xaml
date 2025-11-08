@@ -277,14 +277,21 @@
                 </StackPanel>
             </ScrollViewer>
             
-            <TabControl
-                Background="White"
-                BorderBrush="Gray" BorderThickness="1"
-                x:Name="QueueOverlay"
-                HorizontalAlignment="Right"
+            <StackPanel
+                x:Name="QueueWindowGridSpace"
                 Width="200"
-                Visibility="Visible"
-                Grid.Column="2">
+                Grid.Column="2"
+                Visibility="Collapsed">
+            </StackPanel>
+        </Grid>
+
+        <Border Background="White"
+                BorderBrush="Gray" BorderThickness="1"
+                x:Name="QueueOverlay" 
+                HorizontalAlignment="Right"
+                Visibility="Collapsed"
+                Grid.Row="1">
+            <TabControl Width="200">
 
                 <TabControl.Template>
                     <ControlTemplate TargetType="TabControl">
@@ -383,164 +390,7 @@
                     </ListView>
                 </TabItem>
             </TabControl>
-
-            <!--  Designated "Now Playing" tab  -->
-            <!--<Grid 
-                Background="White"
-                x:Name="QueueOverlay" 
-                HorizontalAlignment="Right"
-                Width="auto"
-                Visibility="Visible"
-                Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>  ~1~ Custom header row @1@
-                    <RowDefinition Height="*"/>     ~1~ Actual tab control @1@
-                </Grid.RowDefinitions>
-
-                ~1~ Header Row @1@
-                <DockPanel Grid.Row="0" LastChildFill="False" Margin="5,2">
-                    <TextBlock Text="Now Playing"
-                               VerticalAlignment="Center"
-                               FontWeight="Bold"
-                               DockPanel.Dock="Left"/>
-            
-                    <Button Content="✕"
-                            Width="24"
-                            Height="24"
-                            DockPanel.Dock="Right"
-                            Click="CloseQueueOverlay_Click"
-                            ToolTip="Close"
-                            Padding="0"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            FontSize="14"
-                            Foreground="Gray"
-                            Cursor="Hand"/>
-                </DockPanel>
-
-                ~1~ Tabs @1@
-                <TabControl Grid.Row="1">
-                    <TabItem Header="Queue">
-                        <ListView
-                            x:Name="QueueListView">
-                            <ListView.Resources>
-                                <Style TargetType="GridViewColumnHeader">
-                                    <Setter Property="IsHitTestVisible" Value="False"/>
-                                    <Setter Property="Height" Value="0"></Setter>
-                                </Style>
-                            </ListView.Resources>
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn 
-                                        x:Name="QueueOverlayColumn" 
-                                        Width="200">   
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Vertical">
-                                                    <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                                                    <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>    
-                        </ListView>
-                    </TabItem>
-                    <TabItem Header="Recently Played">
-                        <ListView x:Name="RecentlyPlayedListView">
-                            <ListView.Resources>
-                                <Style TargetType="GridViewColumnHeader">
-                                    <Setter Property="IsHitTestVisible" Value="False"/>
-                                    <Setter Property="Height" Value="0"></Setter>
-                                </Style>
-                            </ListView.Resources>
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Width="200">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Vertical">
-                                                    <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                                                    <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12"/>
-                                                    <TextBlock Text="{Binding PlayedAt, StringFormat='{}{0:G}'}"
-                                                               FontSize="10" Foreground="Gray"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                    </TabItem>
-                </TabControl>
-            </Grid>-->
-        </Grid>
-
-        <!--<Border Background="White"
-                BorderBrush="Gray" BorderThickness="1"
-                x:Name="QueueOverlay" 
-                HorizontalAlignment="Right"
-                Width="auto"
-                Visibility="Visible"
-                Grid.Row="1">
-            <TabControl>
-                
-                <TabItem Header="Queue">
-                    <ListView
-                        x:Name="QueueListView">
-                        <ListView.Resources>
-                            <Style TargetType="GridViewColumnHeader">
-                                <Setter Property="IsHitTestVisible" Value="False"/>
-                                <Setter Property="Height" Value="0"></Setter>
-                            </Style>
-                        </ListView.Resources>
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn 
-                                    x:Name="QueueOverlayColumn" 
-                                    Width="200">   
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Vertical">
-                                                <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                            </GridView>
-                        </ListView.View>    
-                    </ListView>
-                </TabItem>
-                <TabItem Header="Recently Played">
-                    <ListView x:Name="RecentlyPlayedListView">
-                        <ListView.Resources>
-                            <Style TargetType="GridViewColumnHeader">
-                                <Setter Property="IsHitTestVisible" Value="False"/>
-                                <Setter Property="Height" Value="0"></Setter>
-                            </Style>
-                        </ListView.Resources>
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Width="200">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Vertical">
-                                                <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12"/>
-                                                <TextBlock Text="{Binding PlayedAt, StringFormat='{}{0:G}'}"
-                                                           FontSize="10" Foreground="Gray"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-                </TabItem>
-            </TabControl>
-        </Border>-->
+        </Border>
 
         <!-- Control bar -->
         <Grid Grid.Row="2" Background="#222">
