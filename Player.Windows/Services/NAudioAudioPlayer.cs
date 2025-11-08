@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using NAudio.Wave;
@@ -18,17 +19,18 @@ namespace Riffle.Player.Windows.Services
             private set
             {
                 _isPlaying = value;
-                PlayingStateChanged.Invoke(this, new PlayingStateEventArgs(value));
+                var handler = PlayingStateChanged;
+                handler?.Invoke(this, new PlayingStateEventArgs(value));
             }
         }
 
         public bool HasTrackLoaded { get; private set; }
         public string SongTitle { get; private set; } = "No File Selected";
 
-        public event EventHandler<TrackLoadedEventArgs> TrackLoaded;
-        public event EventHandler TrackEnded;
-        public event EventHandler StopAllCalled;
-        public event EventHandler<PlayingStateEventArgs> PlayingStateChanged; 
+        public event EventHandler<TrackLoadedEventArgs>? TrackLoaded;
+        public event EventHandler? TrackEnded;
+        public event EventHandler? StopAllCalled;
+        public event EventHandler<PlayingStateEventArgs>? PlayingStateChanged; 
         
         public TimeSpan CurrentTime => FirstReader?.CurrentTime ?? TimeSpan.Zero;
         public TimeSpan TotalTime => FirstReader?.TotalTime ?? TimeSpan.Zero;
@@ -67,7 +69,8 @@ namespace Riffle.Player.Windows.Services
             SongTitle = song.Title;
             IsPlaying = true;
             HasTrackLoaded = true;
-            TrackLoaded.Invoke(this, new TrackLoadedEventArgs(song));
+            var handler = TrackLoaded;
+            handler?.Invoke(this, new TrackLoadedEventArgs(song));
         }
 
         private ISampleProvider GetValidSampleInput(AudioFileReader reader)
@@ -114,7 +117,11 @@ namespace Riffle.Player.Windows.Services
 
         private void OnPlaybackStopped(object? sender, SampleProviderEventArgs e)
         {
-            Application.Current.Dispatcher.BeginInvoke(() => TrackEnded.Invoke(this, EventArgs.Empty));
+            Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                var handler = TrackEnded;
+                handler?.Invoke(this, EventArgs.Empty);
+            });
         }
 
         public void TogglePlay()
@@ -147,7 +154,8 @@ namespace Riffle.Player.Windows.Services
             SongTitle = "No File Selected";
             HasTrackLoaded = false;
             IsPlaying = false;
-            StopAllCalled.Invoke(this, EventArgs.Empty);
+            var handler = StopAllCalled;
+            handler?.Invoke(this, EventArgs.Empty);
         }
 
         public void Dispose()
