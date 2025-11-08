@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Data;
+namespace Riffle.Data;
 
 public class MusicDbContextFactory : IDesignTimeDbContextFactory<MusicDbContext>
 {

@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Riffle.Core.Audio;
+using Riffle.Core.Models;
+using Riffle.Player.Windows.Services;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Player.Windows.ViewModels;
 #nullable enable
 public class MainWindowViewModel : INotifyPropertyChanged
 {
@@ -61,8 +61,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
 
     private string GetPlaylistInfo()
     {
-        var playlist = SelectedPlaylist?.Playlist?.PlaylistItems.ToList();
-        if (playlist == null) playlist = _musicService.GetAllSongs();
+        var playlist = SelectedPlaylist?.Playlist?.PlaylistItems.ToList() ?? _musicService.GetAllSongs();
         var count = playlist.Count;
         var totalDuration = TimeSpan.FromSeconds(playlist.Sum(s => s.Duration.TotalSeconds));
         return $"{count} songs, {(int)totalDuration.TotalHours} hr {totalDuration.Minutes} min";

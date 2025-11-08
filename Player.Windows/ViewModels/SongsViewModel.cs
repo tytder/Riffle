@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Riffle.Core.Audio;
+using Riffle.Core.Models;
+using Riffle.Player.Windows.Services;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Player.Windows.ViewModels;
 #nullable enable
 public class SongsViewModel
 {

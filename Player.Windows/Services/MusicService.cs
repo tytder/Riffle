@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Data;
 using Microsoft.EntityFrameworkCore;
-using Riffle.Core.Audio;
+using Riffle.Core.Models;
+using Riffle.Data;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Player.Windows.Services;
 
 #nullable enable
 public class MusicService

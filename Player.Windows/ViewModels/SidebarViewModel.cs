@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Riffle.Player.Windows.Services;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Player.Windows.ViewModels;
 
 public class SidebarViewModel
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace Riffle.Core.Audio;
+namespace Riffle.Core.Models;
 
 public class Playlist
 {

@@ -1,6 +1,8 @@
-﻿using Riffle.Core.Audio;
+﻿using Riffle.Core.Interfaces;
+using Riffle.Core.Models;
+using Riffle.Core.Utilities;
 
-namespace Riffle.Core;
+namespace Riffle.Core.Services;
 
 public class QueuePlayer
 {
@@ -13,19 +15,22 @@ public class QueuePlayer
     public QueuePlayer(IAudioPlayer player)
     {
         _player = player;
-        _player.TrackEnded += SkipToNextSong;
+        _player.TrackEnded += PlayerOnTrackEnded;
     }
 
-    public void PlayFrom(Song? song, List<Song> playlist) // TODO: work with id instead of whole playlist
+    public void PlayFrom(Song song, List<Song> playlist) // TODO: work with id instead of whole playlist
     {
-        if (song == null || !playlist.Contains(song)) return;
-
         PlaylistSource = playlist.ToList();
 
         RecreateQueue(song);
 
         CurrentSong = Queue.Peek();
         _player.Play(CurrentSong);
+    }
+    
+    private void PlayerOnTrackEnded(object? sender, EventArgs e)
+    {
+        SkipToNextSong();
     }
 
     public void SkipToNextSong()

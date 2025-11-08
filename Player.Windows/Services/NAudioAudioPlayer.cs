@@ -1,22 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows;
-using Riffle.Core.Audio;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using Riffle.Core.Interfaces;
+using Riffle.Core.Models;
 
 namespace Riffle.Player.Windows.Services
 {
     #nullable enable
     public class NAudioAudioPlayer : IAudioPlayer, IDisposable
     {
-        public bool IsPlaying { get; set; }
-        public bool HasTrackLoaded { get; set; }
+        private bool _isPlaying;
+        public bool IsPlaying
+        {
+            get => _isPlaying;
+            private set
+            {
+                _isPlaying = value;
+                PlayingStateChanged.Invoke(this, new PlayingStateEventArgs(value));
+            }
+        }
+
+        public bool HasTrackLoaded { get; private set; }
         public string SongTitle { get; private set; } = "No File Selected";
 
-        public event Action<Song> TrackLoaded = delegate { };
-        public event Action TrackEnded = delegate { };
-        public event Action StopAllCalled = delegate { };
+        public event EventHandler<TrackLoadedEventArgs> TrackLoaded;
+        public event EventHandler TrackEnded;
+        public event EventHandler StopAllCalled;
+        public event EventHandler<PlayingStateEventArgs> PlayingStateChanged; 
         
         public TimeSpan CurrentTime => FirstReader?.CurrentTime ?? TimeSpan.Zero;
         public TimeSpan TotalTime => FirstReader?.TotalTime ?? TimeSpan.Zero;
@@ -27,16 +39,7 @@ namespace Riffle.Player.Windows.Services
         /// <summary>
         /// Takes in and returns a value between 0-1.
         /// </summary>
-        public float Volume
-        {
-            get => Math.Clamp(_volume, 0, 1);
-            set
-            {
-                // TODO: how to get volume higher than 100%
-                _volume = Math.Clamp(value, 0, 1);
-                _outputDevice.Volume = _volume;
-            }
-        }
+        public float Volume => Math.Clamp(_volume, 0, 1);
 
         private readonly WaveOutEvent _outputDevice;
         private readonly MixingSampleProvider _mixer;
@@ -64,7 +67,7 @@ namespace Riffle.Player.Windows.Services
             SongTitle = song.Title;
             IsPlaying = true;
             HasTrackLoaded = true;
-            TrackLoaded.Invoke(song);
+            TrackLoaded.Invoke(this, new TrackLoadedEventArgs(song));
         }
 
         private ISampleProvider GetValidSampleInput(AudioFileReader reader)
@@ -101,24 +104,25 @@ namespace Riffle.Player.Windows.Services
 
             return input;
         }
-        
+
+        public void SetVolume(float volume)
+        {
+            // TODO: how to get volume higher than 100%
+            _volume = Math.Clamp(volume, 0, 1);
+            _outputDevice.Volume = _volume;
+        }
+
         private void OnPlaybackStopped(object? sender, SampleProviderEventArgs e)
         {
-            Application.Current.Dispatcher.BeginInvoke(() => TrackEnded.Invoke());
+            Application.Current.Dispatcher.BeginInvoke(() => TrackEnded.Invoke(this, EventArgs.Empty));
         }
 
-        public void Pause()
+        public void TogglePlay()
         {
-            if (!IsPlaying) return;
-            _outputDevice.Pause();
-            IsPlaying = false;
-        }
-
-        public void Resume()
-        {
-            if (IsPlaying) return;
-            _outputDevice.Play();
-            IsPlaying = true;
+            if (IsPlaying) _outputDevice.Pause();
+            else _outputDevice.Play();
+            
+            IsPlaying = !IsPlaying;
         }
         
         public void Seek(TimeSpan fromSeconds)
@@ -143,7 +147,7 @@ namespace Riffle.Player.Windows.Services
             SongTitle = "No File Selected";
             HasTrackLoaded = false;
             IsPlaying = false;
-            StopAllCalled.Invoke();
+            StopAllCalled.Invoke(this, EventArgs.Empty);
         }
 
         public void Dispose()

@@ -9,8 +9,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Riffle.Core;
+using Riffle.Core.Interfaces;
+using Riffle.Core.Models;
+using Riffle.Core.Services;
 using Riffle.Player.Windows.Services;
-using Riffle.Core.Audio;
+using Riffle.Player.Windows.ViewModels;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace Riffle.Player.Windows
@@ -18,8 +21,8 @@ namespace Riffle.Player.Windows
     public partial class MainWindow
     {
         private readonly NAudioAudioPlayer _player;
+        private readonly PlaybackManager _playbackManager;
         private readonly MusicService _musicService;
-        private readonly QueuePlayer _queuePlayer;
         private readonly Color _buttonInactiveColor;
         
         public MainWindowViewModel ViewModel { get; }
@@ -39,8 +42,8 @@ namespace Riffle.Player.Windows
             _player = new NAudioAudioPlayer();
             ViewModel = new MainWindowViewModel(musicService);
             PlaylistList.SelectedIndex = 0;
-            _queuePlayer = new QueuePlayer(_player);
             DataContext = ViewModel;
+            _playbackManager = new PlaybackManager(_player);
             
             DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(200) };
             timer.Tick += Timer_Tick;
@@ -128,15 +131,15 @@ namespace Riffle.Player.Windows
             _player.Seek(TimeSpan.FromSeconds(SeekBar.Value));
         }
 
-        private void Player_TrackLoaded(Song song)
+        private void Player_TrackLoaded(object? sender, TrackLoadedEventArgs e)
         {
-            TxtTotalTime.Text = song.Duration.TotalSeconds.ToMmSs();
-            SeekBar.Maximum = song.Duration.TotalSeconds;
+            TxtTotalTime.Text = e.SongLoaded.Duration.TotalSeconds.ToMmSs();
+            SeekBar.Maximum = e.SongLoaded.Duration.TotalSeconds;
             SeekBar.Value = 0;
-            TxtSongTitle.Text = song.Title;
-            TxtArtistName.Text = song.Artist;
+            TxtSongTitle.Text = e.SongLoaded.Title;
+            TxtArtistName.Text = e.SongLoaded.Artist;
             _isTeleportingSeekBarThumb = false;
-            QueueListView.ItemsSource = _queuePlayer.Queue;
+            QueueListView.ItemsSource = _playbackManager.Queue;
         }
 
         private void Timer_Tick(object? sender, EventArgs e)
@@ -150,6 +153,7 @@ namespace Riffle.Player.Windows
         private void OnPauseResume(object sender, RoutedEventArgs e)
         {
             if (!_player.HasTrackLoaded) return;
+            _player.TogglePlay();
             SetPauseResume(_player.IsPlaying);
         }
 
@@ -158,7 +162,6 @@ namespace Riffle.Player.Windows
             var selectedPlaylistViewModel = PlaylistList.SelectedItem as PlaylistViewModel;
             if (shouldPause)
             {
-                _player.Pause();
                 BtnPauseResume.Content = "▶";
                 BtnPauseResume.Padding = new Thickness(.5, -2, .5, -0.5);
                 if (Equals(ViewModel.CurrentPlaylistPlaying, selectedPlaylistViewModel))
@@ -170,7 +173,6 @@ namespace Riffle.Player.Windows
             }
             else
             {
-                _player.Resume();
                 BtnPauseResume.Content = "⏸";
                 BtnPauseResume.Padding = new Thickness(-2, -2, -2, -0.5);
                 if (Equals(ViewModel.CurrentPlaylistPlaying, selectedPlaylistViewModel))
@@ -195,7 +197,7 @@ namespace Riffle.Player.Windows
         private void VolumeBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (!IsLoaded) return;
-            _player.Volume = (float)VolumeBar.Value / 100;
+            _player.SetVolume((float)VolumeBar.Value / 100);
             TxtVolumePercentage.Text = ((int)VolumeBar.Value) + "%";
         }
 
@@ -286,7 +288,7 @@ namespace Riffle.Player.Windows
                 _musicService.GetSongsForPlaylist(selectedPlaylistViewModel.Playlist);
 
             // Start playback
-            _queuePlayer.PlayFrom(selectedSong, playListSongs);
+            _playbackManager.PlayFrom(selectedSong, playListSongs);
 
             // Update "currently playing" state in the MainWindowViewModel
             ViewModel.CurrentSongPlaying = selectedSong;
@@ -365,21 +367,21 @@ namespace Riffle.Player.Windows
 
         private void BtnLoop_OnClick(object sender, RoutedEventArgs e)
         {
-            _queuePlayer.ToggleLoop();
-            BtnLoop.Background = new SolidColorBrush(_queuePlayer.Loop ? Colors.White : _buttonInactiveColor);
+            _playbackManager.ToggleLoop();
+            BtnLoop.Background = new SolidColorBrush(_playbackManager.IsLooping ? Colors.White : _buttonInactiveColor);
         }
 
         private void BtnNextSong_OnClick(object sender, RoutedEventArgs e)
         {
-            _queuePlayer.SkipToNextSong();
+            _playbackManager.SkipToNextSong();
         }
 
         private void BtnPreviousSong_OnClick(object sender, RoutedEventArgs e)
         {
-            _queuePlayer.SkipToPrevSong();
+            _playbackManager.SkipToPrevSong();
         }
 
-        private void OnStopCalled()
+        private void OnStopCalled(object? sender, EventArgs eventArgs)
         {
             TxtSongTitle.Text = _player.SongTitle;
             TxtCurrentTime.Text =  _player.CurrentTime.TotalSeconds.ToMmSs();
@@ -400,6 +402,7 @@ namespace Riffle.Player.Windows
             }
             
             // else toggle pause and play
+            _player.TogglePlay();
             SetPauseResume(_player.IsPlaying);
         }
 
@@ -415,11 +418,12 @@ namespace Riffle.Player.Windows
             var firstSongInPlaylist = selectedPlaylistViewModel?.GetFirstSong() ?? playListSongs[0];
             
             // Start playback
-            _queuePlayer.PlayFrom(firstSongInPlaylist, playListSongs);
+            _playbackManager.PlayFrom(firstSongInPlaylist, playListSongs);
             
             // Update "currently playing" state in the MainWindowViewModel
             ViewModel.CurrentSongPlaying = firstSongInPlaylist;
             ViewModel.CurrentPlaylistPlaying = selectedPlaylistViewModel;
+            
             SetPauseResume(false);
         }
     }

@@ -1,7 +1,7 @@
 ﻿using System;
-using Riffle.Core.Audio;
+using Riffle.Core.Models;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Player.Windows.ViewModels;
 
 #nullable enable
 public class PlaylistViewModel

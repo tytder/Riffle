@@ -1,7 +1,4 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
-
-namespace Riffle.Core.Audio;
+﻿namespace Riffle.Core.Models;
 
 # nullable enable
 public class Song

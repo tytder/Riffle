@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Globalization;
 using System.Windows.Data;
-using Riffle.Core.Audio;
+using Riffle.Core.Models;
+using Riffle.Player.Windows.ViewModels;
 
-namespace Riffle.Player.Windows;
+namespace Riffle.Player.Windows.Converters;
 
 public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter*/
 {

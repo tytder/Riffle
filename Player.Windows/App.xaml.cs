@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Configuration;
-using System.Data;
 using System.Windows;
-using Data;
 using Microsoft.EntityFrameworkCore;
+using Riffle.Data;
+using Riffle.Player.Windows.Services;
 
 namespace Riffle.Player.Windows;
 

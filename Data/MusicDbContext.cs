@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Riffle.Core;
-using Riffle.Core.Audio;
+using Riffle.Core.Models;
 
-namespace Data;
+namespace Riffle.Data;
 
 public class MusicDbContext : DbContext
 {
