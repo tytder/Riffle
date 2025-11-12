@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,7 +10,6 @@ using System.Windows.Threading;
 using Riffle.Core;
 using Riffle.Core.Interfaces;
 using Riffle.Core.Models;
-using Riffle.Core.Services;
 using Riffle.Player.Windows.Services;
 using Riffle.Player.Windows.ViewModels;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
@@ -21,7 +19,6 @@ namespace Riffle.Player.Windows
     public partial class MainWindow
     {
         private readonly NAudioAudioPlayer _player;
-        private readonly PlaybackManager _playbackManager;
         private readonly MusicService _musicService;
         private readonly Color _buttonInactiveColor;
         
@@ -40,10 +37,10 @@ namespace Riffle.Player.Windows
 
             _musicService = musicService;
             _player = new NAudioAudioPlayer();
-            ViewModel = new MainWindowViewModel(musicService);
+            _player.PlayingStateChanged += PlayerOnPlayingStateChanged;
+            ViewModel = new MainWindowViewModel(musicService, _player);
             PlaylistList.SelectedIndex = 0;
             DataContext = ViewModel;
-            _playbackManager = new PlaybackManager(_player);
             
             DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(200) };
             timer.Tick += Timer_Tick;
@@ -57,7 +54,12 @@ namespace Riffle.Player.Windows
             BtnLoop.Background = new SolidColorBrush(_buttonInactiveColor);
             BtnShuffle.Background = new SolidColorBrush(_buttonInactiveColor);
         }
-        
+
+        private void PlayerOnPlayingStateChanged(object? sender, PlayingStateEventArgs e)
+        {
+            SetPauseResume(e.IsPlaying);
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
@@ -139,7 +141,7 @@ namespace Riffle.Player.Windows
             TxtSongTitle.Text = e.SongLoaded.Title;
             TxtArtistName.Text = e.SongLoaded.Artist;
             _isTeleportingSeekBarThumb = false;
-            QueueListView.ItemsSource = _playbackManager.Queue;
+            QueueListView.ItemsSource = ViewModel.Queue;
         }
 
         private void Timer_Tick(object? sender, EventArgs e)
@@ -153,34 +155,44 @@ namespace Riffle.Player.Windows
         private void OnPauseResume(object sender, RoutedEventArgs e)
         {
             if (!_player.HasTrackLoaded) return;
-            _player.TogglePlay();
-            SetPauseResume(_player.IsPlaying);
+            _player.TogglePlaying();
         }
 
-        private void SetPauseResume(bool shouldPause)
+        private void SetPauseResume(bool isPlaying)
         {
-            var selectedPlaylistViewModel = PlaylistList.SelectedItem as PlaylistViewModel;
-            if (shouldPause)
+            SetControlBarPlaying(isPlaying);
+            SetPlaylistHeaderPlaying(isPlaying);
+        }
+
+        private void SetPlaylistHeaderPlaying(bool isPlaying, PlaylistViewModel? playlistViewModel = null)
+        {
+            playlistViewModel ??= PlaylistList.SelectedItem as PlaylistViewModel;
+            
+            if (isPlaying && Equals(ViewModel.CurrentPlaylistPlaying, playlistViewModel))
+            {
+                PlaylistPlayBtn.Content = "⏸";
+                PlaylistPlayBtn.Padding = new Thickness(-2,-2,-2,-0);
+                PlaylistPlayBtn.FontSize = 18;
+            }
+            else
+            {
+                PlaylistPlayBtn.Content = "▶";
+                PlaylistPlayBtn.Padding = new Thickness(5,0,5,0);
+                PlaylistPlayBtn.FontSize = 12;
+            }
+        }
+
+        private void SetControlBarPlaying(bool isPlaying)
+        {
+            if (!isPlaying)
             {
                 BtnPauseResume.Content = "▶";
                 BtnPauseResume.Padding = new Thickness(.5, -2, .5, -0.5);
-                if (Equals(ViewModel.CurrentPlaylistPlaying, selectedPlaylistViewModel))
-                {
-                    PlaylistPlayBtn.Content = "▶";
-                    PlaylistPlayBtn.Padding = new Thickness(5,0,5,0);
-                    PlaylistPlayBtn.FontSize = 12;
-                }
             }
             else
             {
                 BtnPauseResume.Content = "⏸";
                 BtnPauseResume.Padding = new Thickness(-2, -2, -2, -0.5);
-                if (Equals(ViewModel.CurrentPlaylistPlaying, selectedPlaylistViewModel))
-                {
-                    PlaylistPlayBtn.Content = "⏸";
-                    PlaylistPlayBtn.Padding = new Thickness(-2,-2,-2,-0);
-                    PlaylistPlayBtn.FontSize = 18;
-                }
             }
         }
 
@@ -252,7 +264,7 @@ namespace Riffle.Player.Windows
             ViewModel.SongsViewModel.LoadSongs(ViewModel.SelectedPlaylist);
 
             if (_player.IsPlaying) return; // if no track currently playing, switch to imported song.
-            PlaySong(newSong);
+            ViewModel.PlayFrom(selectedVm, newSong);
         }
 
         private void PlaylistContent_OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -272,27 +284,10 @@ namespace Riffle.Player.Windows
         private void PlaylistContent_OnMouseDoubleClick(object sender, MouseButtonEventArgs mouseButtonEventArgs)
         {
             if (PlaylistContent.SelectedItem is not Song selectedSong) return;
-            PlaySong(selectedSong);
-        }
-
-        private void PlaySong(Song selectedSong)
-        {
+            
             // Determine which playlist view-model is currently selected in the sidebar
             var selectedPlaylistViewModel = PlaylistList.SelectedItem as PlaylistViewModel;
-
-            // Decide the concrete list of songs to play:
-            // - if selectedVm is null or represents "All Songs" (Playlist == null) -> use the songs currently shown in the SongsViewModel
-            // - otherwise ask the MusicService for the songs that belong to that playlist
-            List<Song> playListSongs = selectedPlaylistViewModel?.Playlist == null ? 
-                ViewModel.SongsViewModel.GetAllSongs() :
-                _musicService.GetSongsForPlaylist(selectedPlaylistViewModel.Playlist);
-
-            // Start playback
-            _playbackManager.PlayFrom(selectedSong, playListSongs);
-
-            // Update "currently playing" state in the MainWindowViewModel
-            ViewModel.CurrentSongPlaying = selectedSong;
-            ViewModel.CurrentPlaylistPlaying = selectedPlaylistViewModel; // null means "All Songs"
+            ViewModel.PlayFrom(selectedPlaylistViewModel, selectedSong);
         }
 
         private void PlaylistList_OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -305,14 +300,16 @@ namespace Riffle.Player.Windows
         private void PlaylistList_OnSelected(object sender, RoutedEventArgs e)
         {
             if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
-                        ViewModel.SongsViewModel.LoadSongs(selectedVm);
-                        PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
+            ViewModel.SongsViewModel.LoadSongs(selectedVm);
+            SetPlaylistHeaderPlaying(_player.IsPlaying, selectedVm);
+            PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
         }
         
         private void PlaylistList_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            // Determine which playlist view-model is currently selected in the sidebar
             var selectedPlaylistViewModel = PlaylistList.SelectedItem as PlaylistViewModel;
-            PlayFirstSongFromPlaylist(selectedPlaylistViewModel);
+            ViewModel.PlayFrom(selectedPlaylistViewModel);
         }
 
         private void AddPlaylist_Click(object sender, RoutedEventArgs e)
@@ -368,18 +365,18 @@ namespace Riffle.Player.Windows
 
         private void BtnLoop_OnClick(object sender, RoutedEventArgs e)
         {
-            _playbackManager.ToggleLoop();
-            BtnLoop.Background = new SolidColorBrush(_playbackManager.IsLooping ? Colors.White : _buttonInactiveColor);
+            ViewModel.ToggleLoop();
+            BtnLoop.Background = new SolidColorBrush(ViewModel.IsLooping ? Colors.White : _buttonInactiveColor);
         }
 
         private void BtnNextSong_OnClick(object sender, RoutedEventArgs e)
         {
-            _playbackManager.SkipToNextSong();
+            ViewModel.SkipToNextSong();
         }
 
         private void BtnPreviousSong_OnClick(object sender, RoutedEventArgs e)
         {
-            _playbackManager.SkipToPrevSong();
+            ViewModel.SkipToPrevSong();
         }
 
         private void OnStopCalled(object? sender, EventArgs eventArgs)
@@ -398,34 +395,12 @@ namespace Riffle.Player.Windows
             // if button wasn't the current playing playlist, switch playlists
             if (!Equals(ViewModel.CurrentPlaylistPlaying, selectedPlaylistViewModel))
             {
-                PlayFirstSongFromPlaylist(selectedPlaylistViewModel);
+                ViewModel.PlayFrom(selectedPlaylistViewModel);
                 return;
             }
             
             // else toggle pause and play
-            _player.TogglePlay();
-            SetPauseResume(_player.IsPlaying);
-        }
-
-        private void PlayFirstSongFromPlaylist(PlaylistViewModel? selectedPlaylistViewModel)
-        {
-            // Decide the concrete list of songs to play:
-            // - if selectedVm is null or represents "All Songs" (Playlist == null) -> use the songs currently shown in the SongsViewModel
-            // - otherwise ask the MusicService for the songs that belong to that playlist
-            List<Song> playListSongs = selectedPlaylistViewModel?.Playlist == null ? 
-                ViewModel.SongsViewModel.GetAllSongs() :
-                _musicService.GetSongsForPlaylist(selectedPlaylistViewModel.Playlist);
-
-            var firstSongInPlaylist = selectedPlaylistViewModel?.GetFirstSong() ?? playListSongs[0];
-            
-            // Start playback
-            _playbackManager.PlayFrom(firstSongInPlaylist, playListSongs);
-            
-            // Update "currently playing" state in the MainWindowViewModel
-            ViewModel.CurrentSongPlaying = firstSongInPlaylist;
-            ViewModel.CurrentPlaylistPlaying = selectedPlaylistViewModel;
-            
-            SetPauseResume(false);
+            _player.TogglePlaying();
         }
     }
 }

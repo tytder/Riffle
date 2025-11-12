@@ -19,6 +19,10 @@ namespace Riffle.Player.Windows.Services
             private set
             {
                 _isPlaying = value;
+                
+                if (!value) _outputDevice.Pause();
+                else _outputDevice.Play();
+                
                 var handler = PlayingStateChanged;
                 handler?.Invoke(this, new PlayingStateEventArgs(value));
             }
@@ -68,6 +72,7 @@ namespace Riffle.Player.Windows.Services
             _activeInputs.Add((reader, input));
             SongTitle = song.Title;
             IsPlaying = true;
+            _outputDevice.Play();
             HasTrackLoaded = true;
             var handler = TrackLoaded;
             handler?.Invoke(this, new TrackLoadedEventArgs(song));
@@ -124,13 +129,11 @@ namespace Riffle.Player.Windows.Services
             });
         }
 
-        public void TogglePlay()
+        public void TogglePlaying()
         {
-            if (IsPlaying) _outputDevice.Pause();
-            else _outputDevice.Play();
-            
             IsPlaying = !IsPlaying;
         }
+        
         
         public void Seek(TimeSpan fromSeconds)
         {
@@ -154,6 +157,7 @@ namespace Riffle.Player.Windows.Services
             SongTitle = "No File Selected";
             HasTrackLoaded = false;
             IsPlaying = false;
+            _outputDevice.Stop();
             var handler = StopAllCalled;
             handler?.Invoke(this, EventArgs.Empty);
         }
