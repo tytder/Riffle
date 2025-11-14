@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -64,6 +65,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
     public ObservableQueue<Song> Queue => _playbackManager.Queue;
+    public ObservableQueue<Song> RecentlyPlayed => _playbackManager.RecentlyPlayed;
     public bool IsLooping => _playbackManager.IsLooping;
 
     private string GetPlaylistInfo()

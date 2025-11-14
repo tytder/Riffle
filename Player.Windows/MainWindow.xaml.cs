@@ -133,15 +133,16 @@ namespace Riffle.Player.Windows
             _player.Seek(TimeSpan.FromSeconds(SeekBar.Value));
         }
 
-        private void Player_TrackLoaded(object? sender, TrackLoadedEventArgs e)
+        private void Player_TrackLoaded(object? sender, TrackEventArgs e)
         {
-            TxtTotalTime.Text = e.SongLoaded.Duration.TotalSeconds.ToMmSs();
-            SeekBar.Maximum = e.SongLoaded.Duration.TotalSeconds;
+            TxtTotalTime.Text = e.Song.Duration.TotalSeconds.ToMmSs();
+            SeekBar.Maximum = e.Song.Duration.TotalSeconds;
             SeekBar.Value = 0;
-            TxtSongTitle.Text = e.SongLoaded.Title;
-            TxtArtistName.Text = e.SongLoaded.Artist;
+            TxtSongTitle.Text = e.Song.Title;
+            TxtArtistName.Text = e.Song.Artist;
             _isTeleportingSeekBarThumb = false;
             QueueListView.ItemsSource = ViewModel.Queue;
+            RecentlyPlayedListView.ItemsSource = ViewModel.RecentlyPlayed;
         }
 
         private void Timer_Tick(object? sender, EventArgs e)

@@ -29,10 +29,11 @@ namespace Riffle.Player.Windows.Services
         }
 
         public bool HasTrackLoaded { get; private set; }
-        public string SongTitle { get; private set; } = "No File Selected";
-
-        public event EventHandler<TrackLoadedEventArgs>? TrackLoaded;
-        public event EventHandler? TrackEnded;
+        public string SongTitle => CurrentSong?.Title ?? "No file selected";
+        public Song? CurrentSong { get; private set; }
+        
+        public event EventHandler<TrackEventArgs>? TrackLoaded;
+        public event EventHandler<TrackEventArgs>? TrackEnded;
         public event EventHandler? StopAllCalled;
         public event EventHandler<PlayingStateEventArgs>? PlayingStateChanged; 
         
@@ -60,7 +61,12 @@ namespace Riffle.Player.Windows.Services
             };
             _outputDevice.Init(_mixer);
             _outputDevice.Play();
-            _mixer.MixerInputEnded += OnPlaybackStopped;
+            //_mixer.MixerInputEnded += OnMixerInputEnded;
+        }
+
+        private void OnMixerInputEnded(object? sender, SampleProviderEventArgs e)
+        {
+            if (CurrentSong != null) OnPlaybackStopped(sender, new TrackEventArgs(CurrentSong));
         }
 
         public void Play(Song song)
@@ -70,14 +76,14 @@ namespace Riffle.Player.Windows.Services
             var input = GetValidSampleInput(reader);
             _mixer.AddMixerInput(input);
             _activeInputs.Add((reader, input));
-            SongTitle = song.Title;
+            CurrentSong = song;
             IsPlaying = true;
             _outputDevice.Play();
             HasTrackLoaded = true;
             var handler = TrackLoaded;
-            handler?.Invoke(this, new TrackLoadedEventArgs(song));
+            handler?.Invoke(this, new TrackEventArgs(song));
         }
-
+        
         private ISampleProvider GetValidSampleInput(AudioFileReader reader)
         {
             ISampleProvider input = reader.ToSampleProvider();
@@ -104,7 +110,7 @@ namespace Riffle.Player.Windows.Services
                     }
                     else
                     {
-                        // For other channel counts, you'll need a more general converter.
+                        // Other channel counts will need a more general converter.
                         throw new InvalidOperationException("Unsupported channel conversion");
                     }
                 }
@@ -120,12 +126,12 @@ namespace Riffle.Player.Windows.Services
             _outputDevice.Volume = _volume;
         }
 
-        private void OnPlaybackStopped(object? sender, SampleProviderEventArgs e)
+        private void OnPlaybackStopped(object? sender, TrackEventArgs e)
         {
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 var handler = TrackEnded;
-                handler?.Invoke(this, EventArgs.Empty);
+                handler?.Invoke(this, e);
             });
         }
 
@@ -154,7 +160,11 @@ namespace Riffle.Player.Windows.Services
             }
             
             _activeInputs.Clear();
-            SongTitle = "No File Selected";
+            if (CurrentSong != null)
+            {
+                OnPlaybackStopped(null, new TrackEventArgs(CurrentSong));
+            }
+            CurrentSong = null;
             HasTrackLoaded = false;
             IsPlaying = false;
             _outputDevice.Stop();
@@ -167,7 +177,7 @@ namespace Riffle.Player.Windows.Services
             StopAll();
             _outputDevice.Stop();
             _outputDevice.Dispose();
-            _mixer.MixerInputEnded -= OnPlaybackStopped;
+            //_mixer.MixerInputEnded -= OnMixerInputEnded;
         }
     }
 }

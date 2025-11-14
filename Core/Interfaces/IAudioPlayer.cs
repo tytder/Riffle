@@ -15,8 +15,8 @@ namespace Riffle.Core.Interfaces
         void SetVolume(float volume);
         string SongTitle { get; }
         void Seek(TimeSpan fromSeconds);
-        event EventHandler<TrackLoadedEventArgs> TrackLoaded;
-        event EventHandler TrackEnded;
+        event EventHandler<TrackEventArgs> TrackLoaded;
+        event EventHandler<TrackEventArgs> TrackEnded;
         event EventHandler StopAllCalled;
         event EventHandler<PlayingStateEventArgs> PlayingStateChanged;
     }
