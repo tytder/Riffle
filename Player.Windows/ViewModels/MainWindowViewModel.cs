@@ -47,25 +47,12 @@ public class MainWindowViewModel : INotifyPropertyChanged
             }
         }
     }
-
-    private Song? _currentSongPlaying;
-
-    public Song? CurrentSongPlaying
-    {
-        get => _currentSongPlaying;
-        set
-        {
-            if (!Equals(_currentSongPlaying, value))
-            {
-                _currentSongPlaying = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    
+    public Song? CurrentSong => _playbackManager.CurrentSong;
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
     public ObservableQueue<Song> Queue => _playbackManager.Queue;
-    public ObservableQueue<Song> RecentlyPlayed => _playbackManager.RecentlyPlayed;
+    public ObservableQueue<SongPlayed> RecentlyPlayed => _playbackManager.RecentlyPlayed;
     public bool IsLooping => _playbackManager.IsLooping;
 
     private string GetPlaylistInfo()
@@ -83,11 +70,8 @@ public class MainWindowViewModel : INotifyPropertyChanged
         SongsViewModel = new SongsViewModel(musicService);
         SelectedPlaylist = SidebarViewModel.Playlists[0];
         _playbackManager = new PlaybackManager(player);
+        _playbackManager.PropertyChanged += Playback_PropertyChanged;
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-    private void OnPropertyChanged([CallerMemberName] string? name = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     public void ToggleLoop()
     {
@@ -121,10 +105,21 @@ public class MainWindowViewModel : INotifyPropertyChanged
         songToPlay ??= selectedPlaylistViewModel?.GetFirstSong() ?? playListSongs[0];
 
         // Update "currently playing" state in the MainWindowViewModel
-        CurrentSongPlaying = songToPlay;
         CurrentPlaylistPlaying = selectedPlaylistViewModel;
         
         // Start playback
         _playbackManager.PlayFrom(songToPlay, playListSongs);
     }
+    
+    private void Playback_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PlaybackManager.CurrentSong))
+        {
+            OnPropertyChanged(nameof(CurrentSong));
+        }
+    }
+    
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

@@ -244,7 +244,7 @@
                                         <DataTrigger.Binding>
                                             <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
                                                 <Binding Path="." /> <!-- Song in this row -->
-                                                <Binding Path="ViewModel.CurrentSongPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                <Binding Path="ViewModel.CurrentSong" RelativeSource="{RelativeSource AncestorType=Window}" />
                                                 <Binding Path="ViewModel.SelectedPlaylist" RelativeSource="{RelativeSource AncestorType=Window}" />
                                                 <Binding Path="ViewModel.CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
                                             </MultiBinding>
@@ -297,7 +297,6 @@
                 Visibility="Collapsed"
                 Grid.Row="1">
             <TabControl Width="200">
-
                 <TabControl.Template>
                     <ControlTemplate TargetType="TabControl">
                         <StackPanel>
@@ -341,6 +340,7 @@
                     <ListView
                         x:Name="QueueListView"
                         ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
                         >
                         <ListView.Resources>
                             <Style TargetType="GridViewColumnHeader">
@@ -348,6 +348,11 @@
                                 <Setter Property="Height" Value="0"></Setter>
                             </Style>
                         </ListView.Resources>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn
@@ -370,6 +375,7 @@
                     <ListView 
                         x:Name="RecentlyPlayedListView"
                         ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
                         >
                         <ListView.Resources>
                             <Style TargetType="GridViewColumnHeader">

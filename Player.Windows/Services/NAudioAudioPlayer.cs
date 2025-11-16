@@ -29,11 +29,10 @@ namespace Riffle.Player.Windows.Services
         }
 
         public bool HasTrackLoaded { get; private set; }
-        public string SongTitle => CurrentSong?.Title ?? "No file selected";
-        public Song? CurrentSong { get; private set; }
-        
+        public string SongTitle { get; private set; } = "No file selected";
+
         public event EventHandler<TrackEventArgs>? TrackLoaded;
-        public event EventHandler<TrackEventArgs>? TrackEnded;
+        public event EventHandler? TrackEnded;
         public event EventHandler? StopAllCalled;
         public event EventHandler<PlayingStateEventArgs>? PlayingStateChanged; 
         
@@ -61,12 +60,7 @@ namespace Riffle.Player.Windows.Services
             };
             _outputDevice.Init(_mixer);
             _outputDevice.Play();
-            //_mixer.MixerInputEnded += OnMixerInputEnded;
-        }
-
-        private void OnMixerInputEnded(object? sender, SampleProviderEventArgs e)
-        {
-            if (CurrentSong != null) OnPlaybackStopped(sender, new TrackEventArgs(CurrentSong));
+            _mixer.MixerInputEnded += OnPlaybackEnded;
         }
 
         public void Play(Song song)
@@ -76,7 +70,7 @@ namespace Riffle.Player.Windows.Services
             var input = GetValidSampleInput(reader);
             _mixer.AddMixerInput(input);
             _activeInputs.Add((reader, input));
-            CurrentSong = song;
+            SongTitle = song.Title;
             IsPlaying = true;
             _outputDevice.Play();
             HasTrackLoaded = true;
@@ -126,7 +120,7 @@ namespace Riffle.Player.Windows.Services
             _outputDevice.Volume = _volume;
         }
 
-        private void OnPlaybackStopped(object? sender, TrackEventArgs e)
+        private void OnPlaybackEnded(object? sender, EventArgs e)
         {
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
@@ -160,11 +154,7 @@ namespace Riffle.Player.Windows.Services
             }
             
             _activeInputs.Clear();
-            if (CurrentSong != null)
-            {
-                OnPlaybackStopped(null, new TrackEventArgs(CurrentSong));
-            }
-            CurrentSong = null;
+            SongTitle = "No file selected";
             HasTrackLoaded = false;
             IsPlaying = false;
             _outputDevice.Stop();
@@ -177,7 +167,7 @@ namespace Riffle.Player.Windows.Services
             StopAll();
             _outputDevice.Stop();
             _outputDevice.Dispose();
-            //_mixer.MixerInputEnded -= OnMixerInputEnded;
+            _mixer.MixerInputEnded -= OnPlaybackEnded;
         }
     }
 }

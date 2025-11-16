@@ -1,48 +1,155 @@
 ﻿#nullable enable
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Riffle.Core.Interfaces;
 using Riffle.Core.Models;
 using Riffle.Core.Utilities;
 
 namespace Riffle.Core.Services;
 
-public class PlaybackManager
+public class PlaybackManager : INotifyPropertyChanged
 {
-    private readonly QueuePlayer _queuePlayer;
-    public ObservableQueue<Song> Queue => _queuePlayer.Queue;
-    public ObservableQueue<Song> RecentlyPlayed;
+    public ObservableQueue<Song> Queue = new();
+    public ObservableQueue<SongPlayed> RecentlyPlayed;
     
-    public bool IsLooping => _queuePlayer.Loop; // TODO: should be in here instead?
+    private readonly IAudioPlayer _player;
+    private List<Song> _playlistSource = new();
+    
+    private Song? _currentSong;
+
+    public Song? CurrentSong
+    {
+        get => _currentSong;
+        set
+        {
+            if (!Equals(_currentSong, value))
+            {
+                _currentSong = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+    public bool IsLooping { get; private set; } // TODO: should be in here instead?
+    public event EventHandler<TrackEventArgs>? TrackStopped;
     
     public PlaybackManager(IAudioPlayer audioPlayer)
     {
-        _queuePlayer = new QueuePlayer(audioPlayer);
-        RecentlyPlayed = new ObservableQueue<Song>(50, true);
-        audioPlayer.TrackEnded += AudioPlayerOnTrackEnded;
+        _player = audioPlayer;
+        _player.TrackEnded += PlayerOnTrackEnded;
+        RecentlyPlayed = new ObservableQueue<SongPlayed>(50, true);
     }
 
-    private void AudioPlayerOnTrackEnded(object? sender, TrackEventArgs e)
+    public void PlayFrom(Song? song, List<Song> playlist)
     {
-        RecentlyPlayed.Enqueue(e.Song);
-    }
+        if (CurrentSong != null)
+        {
+            TrackStopped?.Invoke(this, new TrackEventArgs(CurrentSong));
+            var previousSong = new SongPlayed(CurrentSong, DateTime.Now);
+            RecentlyPlayed.Enqueue(previousSong);
+        }
+        
+        if (song == null || !playlist.Contains(song)) return;
+        
+        _playlistSource = playlist.ToList();
 
-    public void PlayFrom(Song? selectedSong, List<Song> playListSongs)
-    {
-        if (selectedSong == null || !playListSongs.Contains(selectedSong)) return;
-        _queuePlayer.PlayFrom(selectedSong, playListSongs);
+        RecreateQueue(song);
+        
+        CurrentSong = Queue.Peek();
+        _player.Play(CurrentSong);
     }
-
-    public void ToggleLoop()
+    
+    private void PlayerOnTrackEnded(object? sender, EventArgs e)
     {
-        _queuePlayer.ToggleLoop();
+        SkipToNextSong();
     }
 
     public void SkipToNextSong()
     {
-        _queuePlayer.SkipToNextSong();
+        /*var prevSong = Queue.Dequeue();
+        if (IsLooping)
+        {
+            Queue.Enqueue(prevSong);
+        }
+        
+        if (Queue.Count == 0)
+        {
+            _player.StopAll();
+            return;
+        }
+        
+        CurrentSong = Queue.Peek();
+        _player.Play(CurrentSong);*/
+        
+        if (_playlistSource.Count == 0 || CurrentSong == null)
+            return;
+
+        int index = _playlistSource.IndexOf(CurrentSong) + 1;
+
+        if (index >= _playlistSource.Count)
+        {
+            if (IsLooping)
+                index = 0;
+            else
+            {
+                _player.StopAll();
+                return;
+            }
+        }
+
+        PlayFrom(_playlistSource[index], _playlistSource);
     }
 
     public void SkipToPrevSong()
     {
-        _queuePlayer.SkipToPrevSong();
+        if (_playlistSource.Count == 0 || CurrentSong == null)
+            return;
+
+        int index = _playlistSource.IndexOf(CurrentSong) - 1;
+        if (index < 0)
+        {
+            if (IsLooping)
+                index = _playlistSource.Count - 1;
+            else
+            {
+                _player.StopAll();
+                return;
+            }
+        }
+
+        PlayFrom(_playlistSource[index], _playlistSource);
     }
+
+    public void ToggleLoop()
+    {
+        IsLooping = !IsLooping;
+        if (CurrentSong == null) return;
+        var startIndex = _playlistSource.IndexOf(CurrentSong);
+        for (var index = 0; index < _playlistSource.Count; index++)
+        {
+            if (IsLooping)
+            {
+                var playlistSong = _playlistSource[(startIndex + index) % _playlistSource.Count];
+                if (Queue.Contains(playlistSong)) continue;
+                Queue.Enqueue(playlistSong);
+            }
+            else
+            {
+                if (index >= startIndex) break;
+                var playlistSong = _playlistSource[index];
+                if (!Queue.Contains(playlistSong)) continue;
+                Queue.Remove(playlistSong);
+            }
+        }
+    }
+
+    private void RecreateQueue(Song song)
+    {
+        var startIndex = _playlistSource.IndexOf(song);
+        var ordered = _playlistSource.Skip(startIndex).Concat(_playlistSource.Take(IsLooping ? startIndex : 0));
+        Queue = new ObservableQueue<Song>(ordered);
+    }
+    
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

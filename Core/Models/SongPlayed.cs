@@ -2,6 +2,12 @@
 
 public class SongPlayed
 {
-    public required Song Song { get; set; }
-    public DateTime PlayedAt { get; set; }
+    public Song Song { get; }
+    public DateTime PlayedAt { get; }
+
+    public SongPlayed(Song song, DateTime playedAt)
+    {
+        Song = song;
+        PlayedAt = playedAt;
+    }
 }
