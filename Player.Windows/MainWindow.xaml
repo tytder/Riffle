@@ -184,15 +184,23 @@
                                     <Button 
                                         x:Name="PlaylistPlayBtn"
                                         Content="▶" 
-                                        Padding="5,0"
+                                        Padding="5,-1,5,0"
                                         FontSize="12"
+                                        HorizontalContentAlignment="Center"
+                                        Width="25"
+                                        Height="25"
                                         Margin="0,0,10,0"
                                         Command="{Binding PlayPlaylistCommand}" 
-                                        Width="auto" 
                                         Click="PlaylistPlayBtn_OnBtnClick"
                                     />
-                                    <ToggleButton Content="Shuffle" 
-                                                  IsChecked="{Binding SelectedPlaylist.IsShuffling}"/>
+                                    <Button
+                                        x:Name="BtnShuffleHeader"
+                                        Content="🔀" 
+                                        FontSize="18"
+                                        HorizontalContentAlignment="Center"
+                                        Width="25"
+                                        Height="25"
+                                        Padding="-2,-3.3, -2 , -0.5" />
                                 </StackPanel>
                                 <StackPanel
                                     Grid.Column="2"
@@ -299,9 +307,14 @@
             <TabControl Width="200">
                 <TabControl.Template>
                     <ControlTemplate TargetType="TabControl">
-                        <StackPanel>
+                         <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/> <!-- Tab headers -->
+                                <RowDefinition Height="*"/>    <!-- Tab content -->
+                            </Grid.RowDefinitions>
+                            
                             <!-- Header panel with custom content -->
-                            <Grid VerticalAlignment="Top">
+                            <Grid VerticalAlignment="Top" Grid.Row="0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />    <!-- Tabs -->
                                     <ColumnDefinition Width="Auto" /> <!-- Close button -->
@@ -331,8 +344,9 @@
                             <!-- Content -->
                             <ContentPresenter x:Name="PART_SelectedContentHost"
                                               ContentSource="SelectedContent"
-                                              Margin="0" />
-                        </StackPanel>
+                                              Margin="0" 
+                                              Grid.Row="1"/>
+                        </Grid>
                     </ControlTemplate>
                 </TabControl.Template>
 
@@ -437,36 +451,52 @@
                     <Button
                         x:Name="BtnShuffle"
                         Content="🔀" 
-                        FontSize="16"
-                        Padding="-2,-2, -2 , -0.5"
-                        Margin="3,5" />
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
+                        />
                     <Button
                         x:Name="BtnPreviousSong"
                         Content="⏮" 
-                        FontSize="16"
-                        Padding="-2,-2, -2 , -0.5"
-                        Margin="3,5"
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
                         Click="BtnPreviousSong_OnClick" />
                     <Button
                         x:Name="BtnPauseResume"
                         Content="▶" 
                         FontSize="16"
-                        Padding=".5,-2, .5, -0.5"
-                        Margin="3,5"
+                        Padding="2,-2, 2, -0.5"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Margin="5,5"
                         Click="OnPauseResume" />
                     <Button
                         x:Name="BtnNextSong"
                         Content="⏭" 
-                        FontSize="16"
-                        Padding="-2,-2, -2 , -0.5"
-                        Margin="3,5"
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
                         Click="BtnNextSong_OnClick" />
                     <Button
                         x:Name="BtnLoop"
                         Content="🔁" 
-                        FontSize="16"
-                        Padding="-2,-2, -2 , -0.5"
-                        Margin="3,5"
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
                         Click="BtnLoop_OnClick"
                         Background="White" />
                 </StackPanel>

@@ -21,6 +21,8 @@ namespace Riffle.Player.Windows
         private readonly NAudioAudioPlayer _player;
         private readonly MusicService _musicService;
         private readonly Color _buttonInactiveColor;
+        private readonly SolidColorBrush _buttonInactiveBrush;
+        private readonly SolidColorBrush _buttonActiveBrush;
         
         public MainWindowViewModel ViewModel { get; }
         
@@ -51,8 +53,12 @@ namespace Riffle.Player.Windows
             Loaded += OnLoaded;
             
             _buttonInactiveColor = Color.FromRgb(80, 80, 80);
-            BtnLoop.Background = new SolidColorBrush(_buttonInactiveColor);
-            BtnShuffle.Background = new SolidColorBrush(_buttonInactiveColor);
+            _buttonInactiveBrush = new SolidColorBrush(_buttonInactiveColor);
+            _buttonActiveBrush = new SolidColorBrush(Colors.White);
+            
+            BtnLoop.Background = _buttonInactiveBrush;
+            BtnShuffle.Background = _buttonInactiveBrush;
+            BtnShuffleHeader.Background = _buttonInactiveBrush;
         }
 
         private void PlayerOnPlayingStateChanged(object? sender, PlayingStateEventArgs e)
@@ -178,7 +184,7 @@ namespace Riffle.Player.Windows
             else
             {
                 PlaylistPlayBtn.Content = "▶";
-                PlaylistPlayBtn.Padding = new Thickness(5,0,5,0);
+                PlaylistPlayBtn.Padding = new Thickness(5,-1,5,0);
                 PlaylistPlayBtn.FontSize = 12;
             }
         }
@@ -188,12 +194,14 @@ namespace Riffle.Player.Windows
             if (!isPlaying)
             {
                 BtnPauseResume.Content = "▶";
-                BtnPauseResume.Padding = new Thickness(.5, -2, .5, -0.5);
+                BtnPauseResume.Padding = new Thickness(-2, -3.5, -2, -0.5);
+                BtnPauseResume.FontSize = 16;
             }
             else
             {
                 BtnPauseResume.Content = "⏸";
-                BtnPauseResume.Padding = new Thickness(-2, -2, -2, -0.5);
+                BtnPauseResume.Padding = new Thickness(-2.5, -3.3, -2, -0.5);
+                BtnPauseResume.FontSize = 20.2;
             }
         }
 
@@ -367,7 +375,7 @@ namespace Riffle.Player.Windows
         private void BtnLoop_OnClick(object sender, RoutedEventArgs e)
         {
             ViewModel.ToggleLoop();
-            BtnLoop.Background = new SolidColorBrush(ViewModel.IsLooping ? Colors.White : _buttonInactiveColor);
+            BtnLoop.Background = ViewModel.IsLooping ? _buttonActiveBrush : _buttonInactiveBrush;
         }
 
         private void BtnNextSong_OnClick(object sender, RoutedEventArgs e)
