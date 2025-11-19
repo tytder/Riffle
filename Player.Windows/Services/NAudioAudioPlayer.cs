@@ -115,7 +115,7 @@ namespace Riffle.Player.Windows.Services
 
         public void SetVolume(float volume)
         {
-            // TODO: how to get volume higher than 100%
+            // TODO: should we allow more than 100%?
             _volume = Math.Clamp(volume, 0, 1);
             _outputDevice.Volume = _volume;
         }

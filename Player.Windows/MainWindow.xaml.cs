@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -19,8 +18,7 @@ namespace Riffle.Player.Windows
     public partial class MainWindow
     {
         private readonly NAudioAudioPlayer _player;
-        private readonly MusicService _musicService;
-        private readonly Color _buttonInactiveColor;
+        
         private readonly SolidColorBrush _buttonInactiveBrush;
         private readonly SolidColorBrush _buttonActiveBrush;
         
@@ -36,8 +34,7 @@ namespace Riffle.Player.Windows
         public MainWindow(MusicService musicService)
         {
             InitializeComponent();
-
-            _musicService = musicService;
+            
             _player = new NAudioAudioPlayer();
             _player.PlayingStateChanged += PlayerOnPlayingStateChanged;
             ViewModel = new MainWindowViewModel(musicService, _player);
@@ -52,8 +49,8 @@ namespace Riffle.Player.Windows
             _player.StopAllCalled += OnStopCalled;
             Loaded += OnLoaded;
             
-            _buttonInactiveColor = Color.FromRgb(80, 80, 80);
-            _buttonInactiveBrush = new SolidColorBrush(_buttonInactiveColor);
+            var buttonInactiveColor = Color.FromRgb(80, 80, 80);
+            _buttonInactiveBrush = new SolidColorBrush(buttonInactiveColor);
             _buttonActiveBrush = new SolidColorBrush(Colors.White);
             
             BtnLoop.Background = _buttonInactiveBrush;
@@ -266,11 +263,7 @@ namespace Riffle.Player.Windows
 
             Song newSong = new Song(title, artist, duration, filePath);
 
-            _musicService.AddSong(newSong, playlist);
-
-            // Refresh the songs in the viewmodel
-            ViewModel.SongsViewModel.RefreshSongs();
-            ViewModel.SongsViewModel.LoadSongs(ViewModel.SelectedPlaylist);
+            ViewModel.AddSong(newSong, playlist);
 
             if (_player.IsPlaying) return; // if no track currently playing, switch to imported song.
             ViewModel.PlayFrom(selectedVm, newSong);
@@ -329,10 +322,7 @@ namespace Riffle.Player.Windows
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
             if (playlistWindow.ShowDialog() != true) return;
-            var newPlaylist = _musicService.CreatePlaylist(playlistWindow.PlaylistName);
-            ViewModel.SidebarViewModel.RefreshPlaylists();
-            var playlistToSelect = ViewModel.SidebarViewModel.GetPlaylist(newPlaylist.Id);
-            PlaylistList.SelectedItem = playlistToSelect;
+            PlaylistList.SelectedItem = ViewModel.CreatePlaylist(playlistWindow.PlaylistName);
         }
 
         private void RemovePlaylist_Click(object sender, RoutedEventArgs e)
@@ -350,15 +340,9 @@ namespace Riffle.Player.Windows
             if (deletePlaylistWindow.ShowDialog() != true) return;
 
             // Delete from database via service (implement if missing)
-            _musicService.DeletePlaylist(selectedVm.Playlist);
+            ViewModel.DeletePlaylist(selectedVm);
 
-            // Refresh the sidebar list and select "All Songs"
-            ViewModel.SidebarViewModel.RefreshPlaylists();
-
-            // Try to select the "All Songs" entry in the sidebar
-            var allSongsVm = ViewModel.SidebarViewModel.Playlists.FirstOrDefault(p => p.Playlist == null);
-            if (allSongsVm != null)
-                ViewModel.SelectedPlaylist = allSongsVm;
+            ViewModel.SelectedPlaylist = ViewModel.GetAllSongsPlaylist();
         }
 
         private void Queue_OnClick(object sender, RoutedEventArgs e)

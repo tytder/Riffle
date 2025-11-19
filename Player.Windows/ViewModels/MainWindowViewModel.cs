@@ -118,6 +118,37 @@ public class MainWindowViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(CurrentSong));
         }
     }
+
+    public void AddSong(Song newSong, Playlist? playlist)
+    {
+        _musicService.AddSong(newSong, playlist);
+        
+        // Refresh the songs in the viewmodel
+        SongsViewModel.RefreshSongs();
+        SongsViewModel.LoadSongs(SelectedPlaylist);
+    }
+
+    public PlaylistViewModel CreatePlaylist(string playlistWindowPlaylistName)
+    {
+        return SidebarViewModel.AddPlaylist(_musicService.CreatePlaylist(playlistWindowPlaylistName));
+    }
+
+    public PlaylistViewModel? GetPlaylist(Guid newPlaylistId)
+    {
+        return SidebarViewModel.GetPlaylist(newPlaylistId);
+    }
+
+    public PlaylistViewModel GetAllSongsPlaylist()
+    {
+        return SidebarViewModel.GetAllSongsPlaylist();
+    }
+    
+    public void DeletePlaylist(PlaylistViewModel selectedVmPlaylist)
+    {
+        // TODO: remove playlist should stop the rest of the (playlisted) queue and should reset its stored playlist
+        if (selectedVmPlaylist.Playlist != null) _musicService.DeletePlaylist(selectedVmPlaylist.Playlist);
+        SidebarViewModel.RemovePlaylist(selectedVmPlaylist);
+    }
     
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null)

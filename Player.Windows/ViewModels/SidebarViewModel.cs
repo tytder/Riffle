@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Riffle.Core.Models;
 using Riffle.Player.Windows.Services;
 
+#nullable enable
 namespace Riffle.Player.Windows.ViewModels;
 
 public class SidebarViewModel
@@ -29,6 +31,13 @@ public class SidebarViewModel
             Playlists.Add(new PlaylistViewModel(p.Name, p));
         }
     }
+
+    public PlaylistViewModel AddPlaylist(Playlist playlist)
+    {
+        var newPlaylist = new PlaylistViewModel(playlist.Name, playlist);
+        Playlists.Add(newPlaylist);
+        return newPlaylist;
+    }
     
     public void RefreshPlaylists()
     {
@@ -36,10 +45,10 @@ public class SidebarViewModel
         LoadPlaylists();
     }
 
-    public PlaylistViewModel GetPlaylist(Guid id)
+    public PlaylistViewModel? GetPlaylist(Guid id)
     {
         //if (id == Guid.Empty) return Playlists.First(pl => pl.Name == "All Songs");
-        return Playlists.First(pl => IsWantedPlaylist(pl, id));
+        return Playlists.FirstOrDefault(pl => IsWantedPlaylist(pl, id));
     }
 
     private bool IsWantedPlaylist(PlaylistViewModel playlist, Guid wantedId)
@@ -57,5 +66,21 @@ public class SidebarViewModel
         
         // simply check the id if the "All Songs" playlist is not the wanted playlist.
         return playlist.Playlist.Id == wantedId;
+    }
+
+    public void RemovePlaylist(PlaylistViewModel selectedVmPlaylist)
+    {
+        Playlists.Remove(selectedVmPlaylist);
+    }
+
+    public PlaylistViewModel GetAllSongsPlaylist()
+    {
+        var allSongs = GetPlaylist(Guid.Empty);
+        allSongs ??= Playlists.FirstOrDefault(pl => pl.Playlist == null);
+        allSongs ??= Playlists.FirstOrDefault(pl => pl.Name == "All Songs");
+
+        if (allSongs == null) throw new NullReferenceException("All Songs not found.");
+        
+        return allSongs;
     }
 }
