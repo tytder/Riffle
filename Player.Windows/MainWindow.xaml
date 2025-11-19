@@ -52,15 +52,6 @@
                     Margin="25,5,30,5"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center" />
-                <Button
-                    x:Name="BtnImportSong"
-                    Click="BtnImportSong_OnClick"
-                    Content="Import new song"
-                    Margin="0,5"
-                    Padding="2"
-                    Height="30"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center" />
             </StackPanel>
 
             <!-- Window Controls -->
@@ -189,7 +180,7 @@
                                         HorizontalContentAlignment="Center"
                                         Width="25"
                                         Height="25"
-                                        Margin="0,0,10,0"
+                                        Margin="0,0,5,0"
                                         Command="{Binding PlayPlaylistCommand}" 
                                         Click="PlaylistPlayBtn_OnBtnClick"
                                     />
@@ -200,7 +191,20 @@
                                         HorizontalContentAlignment="Center"
                                         Width="25"
                                         Height="25"
+                                        Margin="5,0"
                                         Padding="-2,-3.3, -2 , -0.5" />
+                                    <Button
+                                        x:Name="BtnImportSong"
+                                        Click="BtnImportSong_OnClick"
+                                        FontWeight="Bold"
+                                        FontSize="20"
+                                        Content="+"
+                                        Margin="5,0"
+                                        Height="25"
+                                        Width="25"
+                                        Padding="-2,-3.3, -2 , -0.5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel
                                     Grid.Column="2"
@@ -571,7 +575,7 @@
                 <Slider
                     x:Name="VolumeBar"
                     Minimum="0"
-                    Maximum="150"
+                    Maximum="100"
                     Value="100"
                     HorizontalAlignment="Stretch"
                     MinWidth="10"
