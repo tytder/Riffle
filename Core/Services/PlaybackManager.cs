@@ -29,7 +29,7 @@ public class PlaybackManager : INotifyPropertyChanged
             }
         }
     }
-    public bool IsLooping { get; private set; } // TODO: should be in here instead?
+    public bool IsLooping { get; private set; }
     public event EventHandler<TrackEventArgs>? TrackStopped;
     
     public PlaybackManager(IAudioPlayer audioPlayer)
