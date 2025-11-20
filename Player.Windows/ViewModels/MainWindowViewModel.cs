@@ -55,6 +55,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public ObservableQueue<Song> Queue => _playbackManager.Queue;
     public ObservableQueue<SongPlayed> RecentlyPlayed => _playbackManager.RecentlyPlayed;
     public bool IsLooping => _playbackManager.IsLooping;
+    public event EventHandler<PlaylistEventArgs>? PlaylistRemoved;
 
     private string GetPlaylistInfo()
     {
@@ -70,8 +71,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
         SidebarViewModel = new SidebarViewModel(musicService);
         SongsViewModel = new SongsViewModel(musicService);
         SelectedPlaylist = SidebarViewModel.Playlists[0];
-        _playbackManager = new PlaybackManager(player);
+        _playbackManager = new PlaybackManager(player, _musicService.GetAllSongs);
         _playbackManager.PropertyChanged += Playback_PropertyChanged;
+        PlaylistRemoved += _playbackManager.OnPlaylistRemoved;
     }
 
     public void ToggleLoop()
@@ -94,24 +96,28 @@ public class MainWindowViewModel : INotifyPropertyChanged
     /// </summary>
     /// <param name="selectedPlaylistViewModel">The current selected playlist.</param>
     /// <param name="songToPlay">The song to start playing. Leave selectedSong null to play first song of current open playlist.</param>
-    public void PlayFrom(PlaylistViewModel? selectedPlaylistViewModel, Song? songToPlay = null)
+    public void PlayFrom(PlaylistViewModel selectedPlaylistViewModel, Song? songToPlay = null)
     {
         // Decide the concrete list of songs to play:
-        // - if selectedVm is null or represents "All Songs" (Playlist == null) -> use the songs currently shown in the SongsViewModel
-        // - otherwise ask the MusicService for the songs that belong to that playlist  
-        List<Song> playListSongs = selectedPlaylistViewModel?.Playlist == null ? 
-            SongsViewModel.GetAllSongs() :
-            _musicService.GetSongsForPlaylist(selectedPlaylistViewModel.Playlist);
-
-        songToPlay ??= selectedPlaylistViewModel?.GetFirstSong() ?? playListSongs[0];
+        // - just grab the current playlist
+        // - or if selectedVm is null -> represents "All Songs"
+        // GetAllSongs already handles if there is no AllSongs playlist so we can ignore the null warning
+        Playlist? playlist = selectedPlaylistViewModel.Playlist;
+        songToPlay ??= GetFirstSong(selectedPlaylistViewModel.Playlist);
 
         // Update "currently playing" state in the MainWindowViewModel
         CurrentPlaylistPlaying = selectedPlaylistViewModel;
         
         // Start playback
-        _playbackManager.PlayFrom(songToPlay, playListSongs);
+        _playbackManager.PlayFrom(songToPlay, playlist);
     }
-    
+
+    private Song GetFirstSong(Playlist? selectPlaylist)
+    {
+        var playlist = selectPlaylist?.PlaylistItems.ToList() ?? _musicService.GetAllSongs();
+        return playlist[0]; // TODO: take into account shuffle logic
+    }
+
     private void Playback_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(PlaybackManager.CurrentSong))
@@ -146,9 +152,10 @@ public class MainWindowViewModel : INotifyPropertyChanged
     
     public void DeletePlaylist(PlaylistViewModel selectedVmPlaylist)
     {
-        // TODO: remove playlist should stop the rest of the (playlisted) queue and should reset its stored playlist
         if (selectedVmPlaylist.Playlist != null) _musicService.DeletePlaylist(selectedVmPlaylist.Playlist);
         SidebarViewModel.RemovePlaylist(selectedVmPlaylist);
+        var handler = PlaylistRemoved;
+        handler?.Invoke(this, new PlaylistEventArgs(selectedVmPlaylist.Playlist));
     }
     
     public event PropertyChangedEventHandler? PropertyChanged;

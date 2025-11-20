@@ -290,8 +290,8 @@ namespace Riffle.Player.Windows
             if (PlaylistContent.SelectedItem is not Song selectedSong) return;
             
             // Determine which playlist view-model is currently selected in the sidebar
-            var selectedPlaylistViewModel = PlaylistList.SelectedItem as PlaylistViewModel;
-            ViewModel.PlayFrom(selectedPlaylistViewModel, selectedSong);
+            if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
+            ViewModel.PlayFrom(selectedVm, selectedSong);
         }
 
         private void PlaylistList_OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -312,8 +312,8 @@ namespace Riffle.Player.Windows
         private void PlaylistList_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // Determine which playlist view-model is currently selected in the sidebar
-            var selectedPlaylistViewModel = PlaylistList.SelectedItem as PlaylistViewModel;
-            ViewModel.PlayFrom(selectedPlaylistViewModel);
+            if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
+            ViewModel.PlayFrom(selectedVm);
         }
 
         private void AddPlaylist_Click(object sender, RoutedEventArgs e)
@@ -385,12 +385,12 @@ namespace Riffle.Player.Windows
 
         private void PlaylistPlayBtn_OnBtnClick(object sender, RoutedEventArgs routedEventArgs)
         {
-            var selectedPlaylistViewModel = PlaylistList.SelectedItem as PlaylistViewModel;
+            if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
             
             // if button wasn't the current playing playlist, switch playlists
-            if (!Equals(ViewModel.CurrentPlaylistPlaying, selectedPlaylistViewModel))
+            if (!Equals(ViewModel.CurrentPlaylistPlaying, selectedVm))
             {
-                ViewModel.PlayFrom(selectedPlaylistViewModel);
+                ViewModel.PlayFrom(selectedVm);
                 return;
             }
             
