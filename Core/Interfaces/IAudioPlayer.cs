@@ -1,4 +1,5 @@
-﻿using Riffle.Core.Models;
+﻿using Riffle.Core.CustomEventArgs;
+using Riffle.Core.Models;
 
 namespace Riffle.Core.Interfaces
 {

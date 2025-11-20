@@ -1,6 +1,6 @@
 ﻿using Riffle.Core.Models;
 
-namespace Riffle.Core.Interfaces;
+namespace Riffle.Core.CustomEventArgs;
 
 public class TrackEventArgs : EventArgs
 {

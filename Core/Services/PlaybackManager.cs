@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Interfaces;
 using Riffle.Core.Models;
 using Riffle.Core.Utilities;

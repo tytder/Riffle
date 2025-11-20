@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Riffle.Core;
+﻿namespace Riffle.Core.Utilities;
 
 public static class MathExtension
 {

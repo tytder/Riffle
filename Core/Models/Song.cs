@@ -1,4 +1,6 @@
-﻿namespace Riffle.Core.Models;
+﻿using Riffle.Core.Utilities;
+
+namespace Riffle.Core.Models;
 
 # nullable enable
 public class Song

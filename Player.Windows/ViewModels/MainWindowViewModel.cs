@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Models;
 using Riffle.Core.Services;
 using Riffle.Core.Utilities;

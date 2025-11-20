@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Windows;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Interfaces;
 using Riffle.Core.Models;
 

@@ -1,4 +1,4 @@
-﻿namespace Riffle.Core.Interfaces;
+﻿namespace Riffle.Core.CustomEventArgs;
 
 public class PlayingStateEventArgs : EventArgs
 {
