@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -130,8 +128,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         _musicService.AddSong(newSong, playlist);
         
+        playlist?.PlaylistItems.Add(newSong);
+        
         // Refresh the songs in the viewmodel
-        SongsViewModel.RefreshSongs();
         SongsViewModel.LoadSongs(SelectedPlaylist);
     }
 

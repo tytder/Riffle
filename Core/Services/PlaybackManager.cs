@@ -73,16 +73,32 @@ public class PlaybackManager : INotifyPropertyChanged
 
     private void PlayerOnTrackEnded(object? sender, EventArgs e)
     {
-        SkipToNextSong();
+        SkipToNextSong(true);
     }
 
-    public void SkipToNextSong()
+    public void SkipToNextSong(bool naturallyEnded = false)
     {
         if (_playlistSource == null) return;
         if (_playlistSource.Count == 0 || CurrentSong == null)
             return;
         int index = _playlistSource.IndexOf(CurrentSong) + 1;
 
+
+        if (_playingPlaylist == null)
+        {
+            if (naturallyEnded)
+            {
+                Stop();
+                _playlistSource?.Clear();
+                return;
+            }
+            else
+            {
+                // TODO: should stop playing, but not clear queue, and then when user skips again it or presses play should start playing the first song again
+                //index = 0;
+            }
+        }
+        
         if (index >= _playlistSource.Count)
         {
             if (IsLooping)
