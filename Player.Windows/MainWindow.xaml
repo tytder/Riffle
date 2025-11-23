@@ -308,7 +308,7 @@
                 HorizontalAlignment="Right"
                 Visibility="Collapsed"
                 Grid.Row="1">
-            <TabControl Width="200">
+            <TabControl Width="200" Margin="2">
                 <TabControl.Template>
                     <ControlTemplate TargetType="TabControl">
                          <Grid>
@@ -337,7 +337,7 @@
                                         Height="20"
                                         Click="Queue_OnClick"
                                         Background="Transparent"
-                                        BorderThickness="1,1,1,0"
+                                        BorderThickness="0,0,0,0"
                                         FontSize="12"
                                         Foreground="Gray"
                                         Margin="5,0,5,0"
@@ -350,50 +350,104 @@
                                               ContentSource="SelectedContent"
                                               Margin="0" 
                                               Grid.Row="1"/>
-                        </Grid>
+                         </Grid>
                     </ControlTemplate>
                 </TabControl.Template>
 
                 <TabItem Header="Queue">
-                    <ListView
-                        x:Name="QueueListView"
-                        ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                        ScrollViewer.VerticalScrollBarVisibility="Auto"
-                        >
-                        <ListView.Resources>
-                            <Style TargetType="GridViewColumnHeader">
-                                <Setter Property="IsHitTestVisible" Value="False" />
-                                <Setter Property="Height" Value="0"></Setter>
-                            </Style>
-                        </ListView.Resources>
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn
-                                    x:Name="QueueOverlayColumn">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Vertical"
-                                                        d:DataContext="{d:DesignInstance models:Song, IsDesignTimeCreatable=False}">
-                                                <TextBlock Text="{Binding Title}" FontWeight="Bold" />
-                                                <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
+                    <Grid Margin="5,10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <!-- Now Playing -->
+                            <RowDefinition Height="Auto"/> <!-- User Queue -->
+                            <RowDefinition Height="*"/>    <!-- Playlist Source: stretches fully -->
+                        </Grid.RowDefinitions>
+                        <StackPanel
+                            Grid.Row="0"> <!-- Now playing -->
+                            <TextBlock Text="Now Playing" 
+                                       FontSize="12" Foreground="Black"
+                                       Padding="0,10,0,0"/>
+                            <TextBlock Text="{Binding DataContext.CurrentSong.Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                                       FontSize="12" Foreground="Black"
+                                       Padding="10,0,0,0"/>
+                            <TextBlock Text="{Binding DataContext.CurrentSong.Artist, RelativeSource={RelativeSource AncestorType=Window}}"
+                                       FontSize="12" Foreground="Black"
+                                       Padding="10,0,0,0"/>
+                        </StackPanel>
+                        <Border
+                            Grid.Row="1"
+                            Background="White"
+                            x:Name="UserQueueOverlay" 
+                            Visibility="Visible"> <!-- User queue -->
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> <!-- Tab headers -->
+                                    <RowDefinition Height="*"/>    <!-- Tab content -->
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Queue" 
+                                           FontSize="12" Foreground="Black"
+                                           Padding="0,10,0,0"/>
+                                <ListView 
+                                    Grid.Row="1"
+                                    x:Name="UserQueueList"
+                                >
+                                </ListView>
+                            </Grid>
+                        </Border>
+                        <Grid
+                            Grid.Row="2"> <!-- Playlist Source -->
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/> <!-- Tab headers -->
+                                <RowDefinition Height="*"/>    <!-- Tab content -->
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                FontSize="12" Foreground="Black" Padding="0,10,0,0">
+                                <Run Text="Next from: "/>
+                                <Run Text="{Binding DataContext.CurrentPlaylistSource.Name, 
+                                                      Mode=OneWay,
+                                                      RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </TextBlock>
+                            <ListView
+                                Grid.Row="1"
+                                x:Name="QueueListView"
+                                ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"> 
+                                <ListView.Resources>
+                                    <Style TargetType="GridViewColumnHeader">
+                                        <Setter Property="IsHitTestVisible" Value="False" />
+                                        <Setter Property="Height" Value="0"></Setter>
+                                    </Style>
+                                </ListView.Resources>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn
+                                            x:Name="QueueOverlayColumn">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Vertical"
+                                                                d:DataContext="{d:DesignInstance models:Song, IsDesignTimeCreatable=False}">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="Bold" />
+                                                        <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Grid>
                 </TabItem>
                 <TabItem Header="Recently Played">
                     <ListView 
                         x:Name="RecentlyPlayedListView"
                         ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        BorderThickness="0"
                         >
                         <ListView.Resources>
                             <Style TargetType="GridViewColumnHeader">

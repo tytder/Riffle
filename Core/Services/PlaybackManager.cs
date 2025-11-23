@@ -10,7 +10,7 @@ namespace Riffle.Core.Services;
 
 public class PlaybackManager : INotifyPropertyChanged
 {
-    public ObservableQueue<Song> Queue = new();
+    public ObservableQueue<Song> Queue = new(); // TODO: currently this is the TotalQueue, change to be user queued songs and then play those first before playing source songs
     public ObservableQueue<SongPlayed> RecentlyPlayed;
     
     private readonly IAudioPlayer _player;
@@ -82,22 +82,6 @@ public class PlaybackManager : INotifyPropertyChanged
         if (_playlistSource.Count == 0 || CurrentSong == null)
             return;
         int index = _playlistSource.IndexOf(CurrentSong) + 1;
-
-
-        if (_playingPlaylist == null)
-        {
-            if (naturallyEnded)
-            {
-                Stop();
-                _playlistSource?.Clear();
-                return;
-            }
-            else
-            {
-                // TODO: should stop playing, but not clear queue, and then when user skips again it or presses play should start playing the first song again
-                //index = 0;
-            }
-        }
         
         if (index >= _playlistSource.Count)
         {
@@ -105,8 +89,19 @@ public class PlaybackManager : INotifyPropertyChanged
                 index = 0;
             else
             {
-                Stop();
-                return;
+                if (naturallyEnded)
+                {
+                    Stop();
+                    _playlistSource?.Clear();
+                    return;
+                }
+                else
+                {
+                    Stop();
+                    return;
+                    // TODO: should stop playing, but not clear queue, and then when user skips again it or presses play should start playing the first song again
+                    //index = 0;
+                }
             }
         }
 
