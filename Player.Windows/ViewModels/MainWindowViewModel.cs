@@ -33,6 +33,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         }
     }
 
+    public string? CurrentPlaylistName => CurrentPlaylistPlaying?.Name; 
     private PlaylistViewModel? _currentPlaylistPlaying;
     public PlaylistViewModel? CurrentPlaylistPlaying
     {
@@ -43,14 +44,35 @@ public class MainWindowViewModel : INotifyPropertyChanged
             {
                 _currentPlaylistPlaying = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CurrentPlaylistName));
+                OnPropertyChanged(nameof(IsCurrentPlayingPlaylistQueueVisible));
             }
         }
     }
-    
+    public bool IsCurrentPlayingPlaylistQueueVisible => CurrentPlaylistPlaying != null;
+
+    public string CurrentSongTitle => _playbackManager.CurrentSong?.Title ?? "No song selected";
+    public string CurrentSongArtist => _playbackManager.CurrentSong?.Artist ?? "";
     public Song? CurrentSong => _playbackManager.CurrentSong;
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
+    public ObservableQueue<Song> TotalQueue => _playbackManager.TotalQueue;
     public ObservableQueue<Song> Queue => _playbackManager.Queue;
+    public bool IsQueueVisible => Queue.Count > 0;
+    
+    private bool _isQueueWindowOpen;
+    public bool IsQueueWindowOpen
+    {
+        get => _isQueueWindowOpen;
+        set
+        {
+            if (!Equals(_isQueueWindowOpen, value))
+            {
+                _isQueueWindowOpen = value;
+                OnPropertyChanged();
+            }
+        }
+    }
     public ObservableQueue<SongPlayed> RecentlyPlayed => _playbackManager.RecentlyPlayed;
     public bool IsLooping => _playbackManager.IsLooping;
     public event EventHandler<PlaylistEventArgs>? PlaylistRemoved;
@@ -121,6 +143,8 @@ public class MainWindowViewModel : INotifyPropertyChanged
         if (e.PropertyName == nameof(PlaybackManager.CurrentSong))
         {
             OnPropertyChanged(nameof(CurrentSong));
+            OnPropertyChanged(nameof(CurrentSongTitle));
+            OnPropertyChanged(nameof(CurrentSongArtist));
         }
     }
 
@@ -155,6 +179,11 @@ public class MainWindowViewModel : INotifyPropertyChanged
         SidebarViewModel.RemovePlaylist(selectedVmPlaylist);
         var handler = PlaylistRemoved;
         handler?.Invoke(this, new PlaylistEventArgs(selectedVmPlaylist.Playlist));
+    }
+    
+    public void ClearUserQueue()
+    {
+        _playbackManager.ClearUserQueue();
     }
     
     public event PropertyChangedEventHandler? PropertyChanged;

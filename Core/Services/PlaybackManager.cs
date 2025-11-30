@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Riffle.Core.CustomEventArgs;
@@ -10,16 +11,18 @@ namespace Riffle.Core.Services;
 
 public class PlaybackManager : INotifyPropertyChanged
 {
-    public ObservableQueue<Song> Queue = new(); // TODO: currently this is the TotalQueue, change to be user queued songs and then play those first before playing source songs
+    public ObservableQueue<Song> Queue; // TODO: currently this is the TotalQueue, change to be user queued songs and then play those first before playing source songs
+    public event NotifyCollectionChangedEventHandler? QueueCollectionChanged;
     public ObservableQueue<SongPlayed> RecentlyPlayed;
     
     private readonly IAudioPlayer _player;
     private readonly Func<List<Song>> _getAllSongsMethod;
     private Playlist? _playingPlaylist;
     private List<Song>? _playlistSource;
+
+    public ObservableQueue<Song> TotalQueue;
     
     private Song? _currentSong;
-
     public Song? CurrentSong
     {
         get => _currentSong;
@@ -41,6 +44,15 @@ public class PlaybackManager : INotifyPropertyChanged
         _getAllSongsMethod = getAllSongsMethod;
         _player.TrackEnded += PlayerOnTrackEnded;
         RecentlyPlayed = new ObservableQueue<SongPlayed>(50, true);
+        Queue = new ObservableQueue<Song>();
+        Queue.CollectionChanged += OnQueueCollectionChanged;
+        TotalQueue = new ObservableQueue<Song>();
+    }
+
+    private void OnQueueCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        var handler = QueueCollectionChanged;
+        handler?.Invoke(sender, e);
     }
 
     public void PlayFrom(Song song, Playlist? playlist)
@@ -53,9 +65,9 @@ public class PlaybackManager : INotifyPropertyChanged
         _playingPlaylist = playlist;
         _playlistSource = songs;
 
-        RecreateQueue(song);
+        RecreateTotalQueue(song);
         
-        CurrentSong = Queue.Peek();
+        CurrentSong = TotalQueue.Peek();
         _player.Play(CurrentSong);
     }
 
@@ -140,27 +152,33 @@ public class PlaybackManager : INotifyPropertyChanged
             if (IsLooping)
             {
                 var playlistSong = _playlistSource[(startIndex + index) % _playlistSource.Count];
-                if (Queue.Contains(playlistSong)) continue;
-                Queue.Enqueue(playlistSong);
+                if (TotalQueue.Contains(playlistSong)) continue;
+                TotalQueue.Enqueue(playlistSong);
             }
             else
             {
                 if (index >= startIndex) break;
                 var playlistSong = _playlistSource[index];
-                if (!Queue.Contains(playlistSong)) continue;
-                Queue.Remove(playlistSong);
+                if (!TotalQueue.Contains(playlistSong)) continue;
+                TotalQueue.Remove(playlistSong);
             }
         }
     }
 
-    private void RecreateQueue(Song song)
+    private void RecreateTotalQueue(Song song)
     {
         if (_playlistSource == null)
             throw new NullReferenceException(
-                $"{nameof(RecreateQueue)} was called while {nameof(_playlistSource)} is null)");
-        var startIndex = _playlistSource.IndexOf(song);
+                $"{nameof(RecreateTotalQueue)} was called while {nameof(_playlistSource)} is null)");
+        var startIndex = 0;
+        if (!Queue.Contains(song))
+        {
+            startIndex = _playlistSource.IndexOf(song);
+        }
         var ordered = _playlistSource.Skip(startIndex).Concat(_playlistSource.Take(IsLooping ? startIndex : 0));
-        Queue = new ObservableQueue<Song>(ordered);
+        var queue = Queue.ToList();
+        queue.AddRange(ordered);
+        TotalQueue = new ObservableQueue<Song>(queue);
     }
     
     // TODO: Look into why natural end of last song of ghost playlist doesnt switch to no selected song
@@ -169,6 +187,11 @@ public class PlaybackManager : INotifyPropertyChanged
         if (!e.Playlist?.Equals(_playingPlaylist) ?? false) return;
         
         _playingPlaylist = null;
+    }
+    
+    public void ClearUserQueue()
+    {
+        Queue.Clear();
     }
     
     public event PropertyChangedEventHandler? PropertyChanged;

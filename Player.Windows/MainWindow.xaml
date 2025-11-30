@@ -16,6 +16,7 @@
     <Window.Resources>
         <converter:ReferenceEqualityConverter x:Key="ReferenceEqualityConverter"/>
         <converter:IndexToNumberConverter x:Key="IndexToNumberConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
 
     <WindowChrome.WindowChrome>
@@ -298,7 +299,9 @@
                 x:Name="QueueWindowGridSpace"
                 Width="200"
                 Grid.Column="2"
-                Visibility="Collapsed">
+                Visibility="{Binding ViewModel.IsQueueWindowOpen, 
+                                RelativeSource={RelativeSource AncestorType=Window},
+                                Converter={StaticResource BooleanToVisibilityConverter}}">
             </StackPanel>
         </Grid>
 
@@ -306,8 +309,11 @@
                 BorderBrush="Gray" BorderThickness="1"
                 x:Name="QueueOverlay" 
                 HorizontalAlignment="Right"
-                Visibility="Collapsed"
-                Grid.Row="1">
+                Grid.Row="1"
+                Visibility="{Binding ViewModel.IsQueueWindowOpen, 
+                                RelativeSource={RelativeSource AncestorType=Window},
+                                Converter={StaticResource BooleanToVisibilityConverter}}"
+                >
             <TabControl Width="200" Margin="2">
                 <TabControl.Template>
                     <ControlTemplate TargetType="TabControl">
@@ -366,10 +372,10 @@
                             <TextBlock Text="Now Playing" 
                                        FontSize="12" Foreground="Black"
                                        Padding="0,10,0,0"/>
-                            <TextBlock Text="{Binding DataContext.CurrentSong.Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                            <TextBlock Text="{Binding ViewModel.CurrentSongTitle, RelativeSource={RelativeSource AncestorType=Window}}"
                                        FontSize="12" Foreground="Black"
                                        Padding="10,0,0,0"/>
-                            <TextBlock Text="{Binding DataContext.CurrentSong.Artist, RelativeSource={RelativeSource AncestorType=Window}}"
+                            <TextBlock Text="{Binding ViewModel.CurrentSongArtist, RelativeSource={RelativeSource AncestorType=Window}}"
                                        FontSize="12" Foreground="Black"
                                        Padding="10,0,0,0"/>
                         </StackPanel>
@@ -377,15 +383,35 @@
                             Grid.Row="1"
                             Background="White"
                             x:Name="UserQueueOverlay" 
-                            Visibility="Visible"> <!-- User queue -->
+                            Visibility="{Binding ViewModel.IsQueueVisible, 
+                                RelativeSource={RelativeSource AncestorType=Window},
+                                Converter={StaticResource BooleanToVisibilityConverter}}"> <!-- User queue -->
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/> <!-- Tab headers -->
                                     <RowDefinition Height="*"/>    <!-- Tab content -->
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="Queue" 
-                                           FontSize="12" Foreground="Black"
-                                           Padding="0,10,0,0"/>
+                                    <Grid
+                                        Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/> <!-- Tab headers -->
+                                            <ColumnDefinition Width="*"/>    <!-- Tab content -->
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Queue" 
+                                                   FontSize="12" Foreground="Black"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Bottom"/>
+                                        <Button
+                                            Grid.Column="1"
+                                            Width="auto"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Bottom"
+                                            Content="Clear queue"
+                                            Background="Transparent"
+                                            Foreground="DimGray"
+                                            BorderThickness="0"
+                                            Click="ClearQueueClick"/>
+                                </Grid>
                                 <ListView 
                                     Grid.Row="1"
                                     x:Name="UserQueueList"
@@ -393,53 +419,59 @@
                                 </ListView>
                             </Grid>
                         </Border>
-                        <Grid
-                            Grid.Row="2"> <!-- Playlist Source -->
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/> <!-- Tab headers -->
-                                <RowDefinition Height="*"/>    <!-- Tab content -->
-                            </Grid.RowDefinitions>
-                            <TextBlock
-                                FontSize="12" Foreground="Black" Padding="0,10,0,0">
-                                <Run Text="Next from: "/>
-                                <Run Text="{Binding DataContext.CurrentPlaylistSource.Name, 
-                                                      Mode=OneWay,
-                                                      RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </TextBlock>
-                            <ListView
-                                Grid.Row="1"
-                                x:Name="QueueListView"
-                                ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                ScrollViewer.VerticalScrollBarVisibility="Auto"> 
-                                <ListView.Resources>
-                                    <Style TargetType="GridViewColumnHeader">
-                                        <Setter Property="IsHitTestVisible" Value="False" />
-                                        <Setter Property="Height" Value="0"></Setter>
-                                    </Style>
-                                </ListView.Resources>
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn
-                                            x:Name="QueueOverlayColumn">
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel Orientation="Vertical"
-                                                                d:DataContext="{d:DesignInstance models:Song, IsDesignTimeCreatable=False}">
-                                                        <TextBlock Text="{Binding Title}" FontWeight="Bold" />
-                                                        <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12" />
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
-                        </Grid>
+                        <Border
+                            Grid.Row="2"
+                            x:Name="PlaylistSourceOverlay"
+                            Visibility="{Binding ViewModel.IsCurrentPlayingPlaylistQueueVisible, 
+                                RelativeSource={RelativeSource AncestorType=Window},
+                                Converter={StaticResource BooleanToVisibilityConverter}}"> <!-- Playlist Source -->
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> <!-- Tab headers -->
+                                    <RowDefinition Height="*"/>    <!-- Tab content -->
+                                </Grid.RowDefinitions>
+                                <TextBlock
+                                    FontSize="12" Foreground="Black" Padding="0,10,0,0">
+                                    <Run Text="Next from: "/>
+                                    <Run Text="{Binding ViewModel.CurrentPlaylistName, 
+                                                          Mode=OneWay,
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                </TextBlock>
+                                <ListView
+                                    Grid.Row="1"
+                                    x:Name="QueueListView"
+                                    ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"> 
+                                    <ListView.Resources>
+                                        <Style TargetType="GridViewColumnHeader">
+                                            <Setter Property="IsHitTestVisible" Value="False" />
+                                            <Setter Property="Height" Value="0"></Setter>
+                                        </Style>
+                                    </ListView.Resources>
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn
+                                                x:Name="QueueOverlayColumn">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Vertical"
+                                                                    d:DataContext="{d:DesignInstance models:Song, IsDesignTimeCreatable=False}">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="Bold" />
+                                                            <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </TabItem>
                 <TabItem Header="Recently Played">

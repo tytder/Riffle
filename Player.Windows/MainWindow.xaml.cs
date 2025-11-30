@@ -6,9 +6,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Riffle.Core;
 using Riffle.Core.CustomEventArgs;
-using Riffle.Core.Interfaces;
 using Riffle.Core.Models;
 using Riffle.Core.Utilities;
 using Riffle.Player.Windows.Services;
@@ -30,9 +28,7 @@ namespace Riffle.Player.Windows
 
         private bool _seekBarWasRecentlyAutoUpdated;
         private bool _isDraggingSeekBar;
-        
-        private bool _isQueueOpen;
-        
+
         public MainWindow(MusicService musicService)
         {
             InitializeComponent();
@@ -146,7 +142,7 @@ namespace Riffle.Player.Windows
             TxtSongTitle.Text = e.Song.Title;
             TxtArtistName.Text = e.Song.Artist;
             _isTeleportingSeekBarThumb = false;
-            QueueListView.ItemsSource = ViewModel.Queue;
+            QueueListView.ItemsSource = ViewModel.TotalQueue;
             RecentlyPlayedListView.ItemsSource = ViewModel.RecentlyPlayed;
         }
 
@@ -349,13 +345,10 @@ namespace Riffle.Player.Windows
 
         private void Queue_OnClick(object sender, RoutedEventArgs e)
         {
-            _isQueueOpen = !_isQueueOpen;
+            ViewModel.IsQueueWindowOpen = !ViewModel.IsQueueWindowOpen;
 
             double totalWidth = PlaylistContent.ActualWidth - SystemParameters.VerticalScrollBarWidth;
-            
-            QueueOverlay.Visibility = _isQueueOpen ?  Visibility.Visible : Visibility.Collapsed;
-            QueueWindowGridSpace.Visibility = _isQueueOpen ? Visibility.Visible : Visibility.Collapsed;
-            QueueOverlayColumn.Width = _isQueueOpen ? totalWidth * 5/12 : 0;
+            QueueOverlayColumn.Width = ViewModel.IsQueueWindowOpen ? totalWidth * 5/12 : 0;
         }
 
         private void BtnLoop_OnClick(object sender, RoutedEventArgs e)
@@ -396,6 +389,11 @@ namespace Riffle.Player.Windows
             
             // else toggle pause and play
             _player.TogglePlaying();
+        }
+
+        private void ClearQueueClick(object sender, RoutedEventArgs e)
+        {
+            ViewModel.ClearUserQueue();
         }
     }
 }
