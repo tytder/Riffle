@@ -11,8 +11,8 @@ using Riffle.Data;
 namespace Riffle.Data.Migrations
 {
     [DbContext(typeof(MusicDbContext))]
-    [Migration("20251217195431_AddSongAddedAt")]
-    partial class AddSongAddedAt
+    [Migration("20260121165041_AllSongsFlag")]
+    partial class AllSongsFlag
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -20,26 +20,16 @@ namespace Riffle.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
 
-            modelBuilder.Entity("PlaylistSong", b =>
-                {
-                    b.Property<Guid>("PlaylistId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PlaylistItemsId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("PlaylistId", "PlaylistItemsId");
-
-                    b.HasIndex("PlaylistItemsId");
-
-                    b.ToTable("PlaylistSong");
-                });
-
             modelBuilder.Entity("Riffle.Core.Models.Playlist", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsAllSongs")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -50,16 +40,31 @@ namespace Riffle.Data.Migrations
                     b.ToTable("Playlists");
                 });
 
+            modelBuilder.Entity("Riffle.Core.Models.PlaylistSong", b =>
+                {
+                    b.Property<Guid>("PlaylistId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SongId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DateAdded")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("PlaylistId", "SongId");
+
+                    b.HasIndex("SongId");
+
+                    b.ToTable("PlaylistSongs");
+                });
+
             modelBuilder.Entity("Riffle.Core.Models.Song", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("AddedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Artist")
                         .HasColumnType("TEXT");
@@ -80,19 +85,33 @@ namespace Riffle.Data.Migrations
                     b.ToTable("Songs");
                 });
 
-            modelBuilder.Entity("PlaylistSong", b =>
+            modelBuilder.Entity("Riffle.Core.Models.PlaylistSong", b =>
                 {
-                    b.HasOne("Riffle.Core.Models.Playlist", null)
-                        .WithMany()
+                    b.HasOne("Riffle.Core.Models.Playlist", "Playlist")
+                        .WithMany("PlaylistItems")
                         .HasForeignKey("PlaylistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Riffle.Core.Models.Song", null)
-                        .WithMany()
-                        .HasForeignKey("PlaylistItemsId")
+                    b.HasOne("Riffle.Core.Models.Song", "Song")
+                        .WithMany("PlaylistItems")
+                        .HasForeignKey("SongId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Playlist");
+
+                    b.Navigation("Song");
+                });
+
+            modelBuilder.Entity("Riffle.Core.Models.Playlist", b =>
+                {
+                    b.Navigation("PlaylistItems");
+                });
+
+            modelBuilder.Entity("Riffle.Core.Models.Song", b =>
+                {
+                    b.Navigation("PlaylistItems");
                 });
 #pragma warning restore 612, 618
         }

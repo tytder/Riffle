@@ -8,7 +8,7 @@
         xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
         mc:Ignorable="d"
         WindowStyle="None"
-        Title="Riffle Music Player" Height="600" Width="800"
+        Title="Riffle Music Player" Height="600" Width="900"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
         MinWidth="600" MinHeight="500">
@@ -241,7 +241,7 @@
 
                     <!-- Playlist Songs -->
                     <ListView x:Name="PlaylistContent"
-                          ItemsSource="{Binding SongsViewModel.Songs}"
+                          ItemsSource="{Binding SongsViewModel.PlaylistSongs}"
                           MouseDoubleClick="PlaylistContent_OnMouseDoubleClick"
                           SizeChanged="PlaylistContent_OnSizeChanged"
                           AlternationCount="1000000"
@@ -252,14 +252,15 @@
 
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Style.Triggers>
                                     <DataTrigger Value="True">
                                         <DataTrigger.Binding>
                                             <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
                                                 <Binding Path="." /> <!-- Song in this row -->
-                                                <Binding Path="ViewModel.CurrentSong" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                                <Binding Path="ViewModel.SelectedPlaylist" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                                <Binding Path="ViewModel.CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                <Binding Path="ViewModel.CurrentSong.Song" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                <!--<Binding Path="ViewModel.SelectedPlaylist" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                <Binding Path="ViewModel.CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />-->
                                             </MultiBinding>
                                         </DataTrigger.Binding>
                                         <Setter Property="Foreground" Value="Green"/>
@@ -268,30 +269,73 @@
                                 </Style.Triggers>
                             </Style>
                         </ListView.ItemContainerStyle>
-                        <ListView.Resources>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            </Style>
-                        </ListView.Resources>
 
                         <ListView.View>
                             <GridView x:Name="GridView">
+                                <!-- Number Column: Left-aligned -->
                                 <GridViewColumn Header="#" Width="20">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock 
                                                 Text="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListViewItem}, 
-                                                Path=(ItemsControl.AlternationIndex), Converter={StaticResource IndexToNumberConverter}}"/>
+                                                Path=(ItemsControl.AlternationIndex), Converter={StaticResource IndexToNumberConverter}}"
+                                                HorizontalAlignment="Left"
+                                                TextAlignment="Left"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="200" />
-                                <GridViewColumn Header="Artist" DisplayMemberBinding="{Binding Artist}" Width="100" />
-                                <GridViewColumn Header="Duration" DisplayMemberBinding="{Binding DurationDisplay}" Width="100" />
-                                <GridViewColumn Header="FilePath" DisplayMemberBinding="{Binding FilePath}" Width="200" />
+
+                                <!-- Title Column: Left-aligned -->
+                                <GridViewColumn Header="Title" Width="200">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock 
+                                                Text="{Binding Song.Title}"
+                                                HorizontalAlignment="Left"
+                                                TextAlignment="Left"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+
+                                <!-- Artist Column: Center-aligned -->
+                                <GridViewColumn Header="Artist" Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock 
+                                                Text="{Binding Song.Artist}"
+                                                HorizontalAlignment="Center"
+                                                TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+
+                                <!-- Date Added Column: Center-aligned -->
+                                <GridViewColumn Header="Date added" Width="150">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock 
+                                                Text="{Binding HowLongAgo}"
+                                                HorizontalAlignment="Center"
+                                                TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+
+                                <!-- Duration Column: Center-aligned -->
+                                <GridViewColumn Header="Duration" Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock 
+                                                Text="{Binding Song.DurationDisplay}"
+                                                HorizontalAlignment="Center"
+                                                TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
                             </GridView>
                         </ListView.View>
                     </ListView>
+
                 </StackPanel>
             </ScrollViewer>
             
@@ -488,9 +532,9 @@
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <StackPanel Orientation="Vertical"
-                                                                    d:DataContext="{d:DesignInstance models:Song, IsDesignTimeCreatable=False}">
-                                                            <TextBlock Text="{Binding Title}" FontWeight="Bold" />
-                                                            <TextBlock Text="{Binding Artist}" FontStyle="Italic" FontSize="12" />
+                                                                    d:DataContext="{d:DesignInstance models:PlaylistSong, IsDesignTimeCreatable=False}">
+                                                            <TextBlock Text="{Binding Song.Title}" FontWeight="Bold" />
+                                                            <TextBlock Text="{Binding Song.Artist}" FontStyle="Italic" FontSize="12" />
                                                         </StackPanel>
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>

@@ -15,6 +15,8 @@ public class MusicDbContext : DbContext
     );
     public DbSet<Song> Songs => Set<Song>();
     public DbSet<Playlist> Playlists => Set<Playlist>();
+    
+    public DbSet<PlaylistSong> PlaylistSongs => Set<PlaylistSong>();
 
     public MusicDbContext(DbContextOptions<MusicDbContext> options) : base(options)
     {
@@ -37,18 +39,31 @@ public class MusicDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            
-            entity.Property(e => e.AddedAt)
-                .HasColumnType("TEXT")
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .IsRequired();
         });
 
         modelBuilder.Entity<Playlist>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.HasMany(p => p.PlaylistItems).WithMany();
+            entity.Property(e => e.IsAllSongs).HasDefaultValue(false);
+        });
+
+        modelBuilder.Entity<PlaylistSong>(entity =>
+        {
+            entity.HasKey(ps => new { ps.PlaylistId, ps.SongId });
+
+            entity.HasOne(ps => ps.Playlist)
+                .WithMany(p => p.PlaylistItems)
+                .HasForeignKey(ps => ps.PlaylistId);
+
+            entity.HasOne(ps => ps.Song)
+                .WithMany(s => s.PlaylistItems)
+                .HasForeignKey(ps => ps.SongId);
+
+            entity.Property(ps => ps.DateAdded)
+                .HasColumnType("TEXT")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .IsRequired();
         });
     }
 }

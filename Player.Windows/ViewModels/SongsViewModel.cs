@@ -2,20 +2,23 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using Riffle.Core.Models;
+using Riffle.Data;
 using Riffle.Player.Windows.Services;
 
 namespace Riffle.Player.Windows.ViewModels;
 #nullable enable
 public class SongsViewModel
 {
-    private readonly MusicService _musicService;
+    private readonly ILibraryManager _libraryManager;
     private PlaylistViewModel? _currentPlaylistVm;
 
-    public ObservableCollection<Song> Songs { get; } = new();
+    public ObservableCollection<PlaylistSong> PlaylistSongs { get; } = new();
 
-    public SongsViewModel(MusicService musicService)
+    public SongsViewModel(
+        ILibraryManager libraryManager
+        )
     {
-        _musicService = musicService;
+        _libraryManager = libraryManager;
     }
 
     public void LoadSongs(PlaylistViewModel? playlistVm)
@@ -29,17 +32,15 @@ public class SongsViewModel
         if (_currentPlaylistVm == null)
             return;
 
-        Songs.Clear();
+        PlaylistSongs.Clear();
 
         var songs = _currentPlaylistVm.Playlist == null
-            ? _musicService.GetAllSongs() // “All Songs”
-            : _musicService.GetSongsForPlaylist(_currentPlaylistVm.Playlist);
+            ? _libraryManager.GetAllSongsPlaylist() // “All Songs”
+            : _libraryManager.GetSongsForPlaylist(_currentPlaylistVm.Playlist);
 
         foreach (var song in songs)
         {
-            Songs.Add(song);
+            PlaylistSongs.Add(song);
         }
     }
-
-    public List<Song> GetAllSongs() => Songs.ToList();
 }

@@ -11,16 +11,16 @@ namespace Riffle.Core.Services;
 
 public class PlaybackManager : INotifyPropertyChanged
 {
-    public ObservableQueue<Song> Queue; // TODO: currently this is the TotalQueue, change to be user queued songs and then play those first before playing source songs
+    public ObservableQueue<PlaylistSong> Queue; // TODO: currently this is the TotalQueue, change to be user queued songs and then play those first before playing source songs
     public event NotifyCollectionChangedEventHandler? QueueCollectionChanged;
     public ObservableQueue<SongPlayed> RecentlyPlayed;
     
     private readonly IAudioPlayer _player;
-    private readonly Func<List<Song>> _getAllSongsMethod;
+    private readonly Func<IEnumerable<PlaylistSong>> _getAllSongsMethod;
     private Playlist? _playingPlaylist;
-    private List<Song>? _playlistSource;
+    private List<PlaylistSong>? _playlistSource;
 
-    public ObservableQueue<Song> TotalQueue;
+    public ObservableQueue<PlaylistSong> TotalQueue;
     
     private SongPlayed? _currentSong;
     public SongPlayed? CurrentSong
@@ -38,15 +38,15 @@ public class PlaybackManager : INotifyPropertyChanged
     public bool IsLooping { get; private set; }
     public event EventHandler<TrackEventArgs>? TrackStopped;
     
-    public PlaybackManager(IAudioPlayer audioPlayer, Func<List<Song>> getAllSongsMethod)
+    public PlaybackManager(IAudioPlayer audioPlayer, Func<IEnumerable<PlaylistSong>> getAllSongsMethod)
     {
         _player = audioPlayer;
         _getAllSongsMethod = getAllSongsMethod;
         _player.TrackEnded += PlayerOnTrackEnded;
         RecentlyPlayed = new ObservableQueue<SongPlayed>(50, true);
-        Queue = new ObservableQueue<Song>();
+        Queue = new ObservableQueue<PlaylistSong>();
         Queue.CollectionChanged += OnQueueCollectionChanged;
-        TotalQueue = new ObservableQueue<Song>();
+        TotalQueue = new ObservableQueue<PlaylistSong>();
     }
 
     private void OnQueueCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -55,11 +55,11 @@ public class PlaybackManager : INotifyPropertyChanged
         handler?.Invoke(sender, e);
     }
 
-    public void PlayFrom(Song song, Playlist? playlist)
+    public void PlayFrom(PlaylistSong song, Playlist? playlist)
     {
         Stop();
 
-        var songs = playlist?.PlaylistItems.ToList() ?? _getAllSongsMethod.Invoke();
+        var songs = playlist?.PlaylistItems.ToList() ?? _getAllSongsMethod.Invoke().ToList();
         if (!songs.Contains(song)) return;
 
         _playingPlaylist = playlist;
@@ -68,7 +68,7 @@ public class PlaybackManager : INotifyPropertyChanged
         RecreateTotalQueue(song);
         
         var curSong = TotalQueue.Peek();
-        CurrentSong = new SongPlayed(curSong, DateTime.Now, playlist); 
+        CurrentSong = new SongPlayed(curSong, DateTime.UtcNow, playlist); 
         _player.Play(CurrentSong);
     }
 
@@ -164,7 +164,7 @@ public class PlaybackManager : INotifyPropertyChanged
         }
     }
 
-    private void RecreateTotalQueue(Song song)
+    private void RecreateTotalQueue(PlaylistSong song)
     {
         if (_playlistSource == null)
             throw new NullReferenceException(
@@ -177,7 +177,7 @@ public class PlaybackManager : INotifyPropertyChanged
         var ordered = _playlistSource.Skip(startIndex).Concat(_playlistSource.Take(IsLooping ? startIndex : 0));
         var queue = Queue.ToList();
         queue.AddRange(ordered);
-        TotalQueue = new ObservableQueue<Song>(queue);
+        TotalQueue = new ObservableQueue<PlaylistSong>(queue);
     }
     
     // TODO: Look into why natural end of last song of ghost playlist doesnt switch to no selected song

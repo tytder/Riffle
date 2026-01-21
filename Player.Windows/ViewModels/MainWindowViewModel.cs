@@ -2,18 +2,20 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
 using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Models;
 using Riffle.Core.Services;
 using Riffle.Core.Utilities;
+using Riffle.Data;
 using Riffle.Player.Windows.Services;
 
 namespace Riffle.Player.Windows.ViewModels;
 #nullable enable
 public class MainWindowViewModel : INotifyPropertyChanged
 {
-    private readonly MusicService _musicService;
     private readonly PlaybackManager _playbackManager;
+    private readonly ILibraryManager _libraryManager;
 
     public SidebarViewModel SidebarViewModel { get; }
     public SongsViewModel SongsViewModel { get; }
@@ -61,18 +63,21 @@ public class MainWindowViewModel : INotifyPropertyChanged
             }
         }
     }
+    
+    
     public bool IsCurrentPlayingPlaylistQueueVisible => CurrentPlaylistPlaying != null;
 
-    public string CurrentSongTitle => _playbackManager.CurrentSong?.Song.Title ?? "No song selected";
-    public string CurrentSongArtist => _playbackManager.CurrentSong?.Song.Artist ?? "";
+    public string CurrentSongTitle => _playbackManager.CurrentSong?.Song.Song.Title ?? "No song selected";
+    public string CurrentSongArtist => _playbackManager.CurrentSong?.Song.Song.Artist ?? "";
     public SongPlayed? CurrentSong => _playbackManager.CurrentSong;
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
-    public ObservableQueue<Song> TotalQueue => _playbackManager.TotalQueue;
-    public ObservableQueue<Song> Queue => _playbackManager.Queue;
+    public ObservableQueue<PlaylistSong> TotalQueue => _playbackManager.TotalQueue;
+    public ObservableQueue<PlaylistSong> Queue => _playbackManager.Queue;
     public bool IsQueueVisible => Queue.Count > 0;
     
     private bool _isQueueWindowOpen;
+
     public bool IsQueueWindowOpen
     {
         get => _isQueueWindowOpen;
@@ -92,19 +97,27 @@ public class MainWindowViewModel : INotifyPropertyChanged
 
     private string GetPlaylistInfo()
     {
-        var playlist = SelectedPlaylist.Playlist?.PlaylistItems.ToList() ?? _musicService.GetAllSongs();
-        var count = playlist.Count;
-        var totalDuration = TimeSpan.FromSeconds(playlist.Sum(s => s.Duration.TotalSeconds));
+        var playlist 
+            = SelectedPlaylist.Playlist?.PlaylistItems.ToArray() 
+              ?? _libraryManager.GetAllSongsPlaylist().ToArray();
+        var count = playlist.Count();
+        var totalDuration = TimeSpan.FromSeconds(playlist.Sum(ps => ps.Song.Duration.TotalSeconds));
         return $"{count} songs, {(int)totalDuration.TotalHours} hr {totalDuration.Minutes} min";
     }
 
-    public MainWindowViewModel(MusicService musicService, NAudioAudioPlayer player)
+    public MainWindowViewModel(
+        ILibraryManager libraryManager,
+        NAudioAudioPlayer player,
+        SidebarViewModel sidebarVm,
+        SongsViewModel songsVm)
     {
-        _musicService = musicService;
-        SidebarViewModel = new SidebarViewModel(musicService);
-        SongsViewModel = new SongsViewModel(musicService);
+        _libraryManager = libraryManager;
+        SidebarViewModel = sidebarVm;
+        //SidebarViewModel = new SidebarViewModel(musicService);
+        SongsViewModel = songsVm;
+        //SongsViewModel = new SongsViewModel(musicService);
         SelectedPlaylist = SidebarViewModel.Playlists[0];
-        _playbackManager = new PlaybackManager(player, _musicService.GetAllSongs);
+        _playbackManager = new PlaybackManager(player, _libraryManager.GetAllSongsPlaylist);
         _playbackManager.PropertyChanged += Playback_PropertyChanged;
         PlaylistRemoved += _playbackManager.OnPlaylistRemoved;
     }
@@ -129,7 +142,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     /// </summary>
     /// <param name="selectedPlaylistViewModel">The current selected playlist.</param>
     /// <param name="songToPlay">The song to start playing. Leave selectedSong null to play first song of current open playlist.</param>
-    public void PlayFrom(PlaylistViewModel selectedPlaylistViewModel, Song? songToPlay = null)
+    public void PlayFrom(PlaylistViewModel selectedPlaylistViewModel, PlaylistSong? songToPlay = null)
     {
         // Decide the concrete list of songs to play:
         // - just grab the current playlist
@@ -145,15 +158,17 @@ public class MainWindowViewModel : INotifyPropertyChanged
         _playbackManager.PlayFrom(songToPlay, playlist);
     }
 
-    private Song GetFirstSong(Playlist? selectPlaylist)
+    private PlaylistSong GetFirstSong(Playlist? selectPlaylist)
     {
-        var playlist = selectPlaylist?.PlaylistItems.ToList() ?? _musicService.GetAllSongs();
+        var playlist 
+            = selectPlaylist?.PlaylistItems.ToArray() 
+              ?? _libraryManager.GetAllSongsPlaylist().ToArray();
         return playlist[0]; // TODO: take into account shuffle logic
     }
 
     private void Playback_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(PlaybackManager.CurrentSong))
+        if (e.PropertyName == nameof(_playbackManager.CurrentSong))
         {
             OnPropertyChanged(nameof(CurrentSong));
             OnPropertyChanged(nameof(CurrentSongTitle));
@@ -162,19 +177,21 @@ public class MainWindowViewModel : INotifyPropertyChanged
         }
     }
 
-    public void AddSong(Song newSong, Playlist? playlist)
+    public PlaylistSong AddSong(Song newSong, Playlist? playlist)
     {
-        _musicService.AddSong(newSong, playlist);
+        var newPlaylistSong = _libraryManager.AddSong(newSong, playlist);
         
-        playlist?.PlaylistItems.Add(newSong);
+        //playlist?.PlaylistItems.Add(newPlaylistSong);
         
         // Refresh the songs in the viewmodel
         SongsViewModel.LoadSongs(SelectedPlaylist);
+
+        return newPlaylistSong;
     }
 
     public PlaylistViewModel CreatePlaylist(string playlistWindowPlaylistName)
     {
-        return SidebarViewModel.AddPlaylist(_musicService.CreatePlaylist(playlistWindowPlaylistName));
+        return SidebarViewModel.AddPlaylist(_libraryManager.CreatePlaylist(playlistWindowPlaylistName));
     }
 
     public PlaylistViewModel? GetPlaylist(Guid newPlaylistId)
@@ -189,7 +206,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     
     public void DeletePlaylist(PlaylistViewModel selectedVmPlaylist)
     {
-        if (selectedVmPlaylist.Playlist != null) _musicService.DeletePlaylist(selectedVmPlaylist.Playlist);
+        if (selectedVmPlaylist.Playlist != null) _libraryManager.DeletePlaylist(selectedVmPlaylist.Playlist);
         SidebarViewModel.RemovePlaylist(selectedVmPlaylist);
         var handler = PlaylistRemoved;
         handler?.Invoke(this, new PlaylistEventArgs(selectedVmPlaylist.Playlist));

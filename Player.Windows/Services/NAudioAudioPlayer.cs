@@ -64,14 +64,14 @@ namespace Riffle.Player.Windows.Services
             _mixer.MixerInputEnded += OnPlaybackEnded;
         }
 
-        public void Play(Song song)
+        public void Play(PlaylistSong song)
         {
             StopAll(); // reset if something is already playing
-            var reader = new AudioFileReader(song.FilePath); // gives floating samples when ToSampleProvider called
+            var reader = new AudioFileReader(song.Song.FilePath); // gives floating samples when ToSampleProvider called
             var input = GetValidSampleInput(reader);
             _mixer.AddMixerInput(input);
             _activeInputs.Add((reader, input));
-            SongTitle = song.Title;
+            SongTitle = song.Song.Title;
             IsPlaying = true;
             _outputDevice.Play();
             HasTrackLoaded = true;

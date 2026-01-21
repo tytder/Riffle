@@ -1,5 +1,7 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -21,6 +23,13 @@ namespace Riffle.Player.Windows
         
         private readonly SolidColorBrush _buttonInactiveBrush;
         private readonly SolidColorBrush _buttonActiveBrush;
+
+        private readonly Dictionary<double, double[]> _songColumnPresets = new Dictionary<double, double[]>()
+        {
+            { 143, [1, 0, 0] },
+            { 330, [.6, 0, .4] },
+            { 500, [.50, .30, .2] },
+        };
         
         public MainWindowViewModel ViewModel { get; }
         
@@ -29,13 +38,16 @@ namespace Riffle.Player.Windows
         private bool _seekBarWasRecentlyAutoUpdated;
         private bool _isDraggingSeekBar;
 
-        public MainWindow(MusicService musicService)
+        public MainWindow(
+            MainWindowViewModel vm,
+            NAudioAudioPlayer player
+            )
         {
             InitializeComponent();
-            
-            _player = new NAudioAudioPlayer();
+
+            _player = player;
             _player.PlayingStateChanged += PlayerOnPlayingStateChanged;
-            ViewModel = new MainWindowViewModel(musicService, _player);
+            ViewModel = vm;
             PlaylistList.SelectedIndex = 0;
             DataContext = ViewModel;
             
@@ -136,11 +148,11 @@ namespace Riffle.Player.Windows
 
         private void Player_TrackLoaded(object? sender, TrackEventArgs e)
         {
-            TxtTotalTime.Text = e.Song.Duration.TotalSeconds.ToMmSs();
-            SeekBar.Maximum = e.Song.Duration.TotalSeconds;
+            TxtTotalTime.Text = e.PlaylistSong.Song.Duration.TotalSeconds.ToMmSs();
+            SeekBar.Maximum = e.PlaylistSong.Song.Duration.TotalSeconds;
             SeekBar.Value = 0;
-            TxtSongTitle.Text = e.Song.Title;
-            TxtArtistName.Text = e.Song.Artist;
+            TxtSongTitle.Text = e.PlaylistSong.Song.Title;
+            TxtArtistName.Text = e.PlaylistSong.Song.Artist;
             _isTeleportingSeekBarThumb = false;
             QueueListView.ItemsSource = ViewModel.TotalQueue;
             RecentlyPlayedListView.ItemsSource = ViewModel.RecentlyPlayed;
@@ -219,6 +231,12 @@ namespace Riffle.Player.Windows
 
         private void BtnImportSong_OnClick(object sender, RoutedEventArgs e)
         {
+            double totalWidth = PlaylistContent.ActualWidth 
+                                - SystemParameters.VerticalScrollBarWidth 
+                                - GridView.Columns[0].Width 
+                                - GridView.Columns[^1].Width
+                                - PlaylistContent.Padding.Left 
+                                - PlaylistContent.Padding.Right;
             var dialog = new OpenFileDialog
             {
                 Filter = "Audio files|*.mp3;*.wav",
@@ -261,29 +279,82 @@ namespace Riffle.Player.Windows
 
             Song newSong = new Song(title, artist, duration, filePath);
 
-            ViewModel.AddSong(newSong, playlist);
+            var newPlaylistSong = ViewModel.AddSong(newSong, playlist);
 
             if (_player.IsPlaying) return; // if no track currently playing, switch to imported song.
-            ViewModel.PlayFrom(selectedVm, newSong);
+            ViewModel.PlayFrom(selectedVm, newPlaylistSong);
         }
 
         private void PlaylistContent_OnSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            double totalWidth = PlaylistContent.ActualWidth 
-                                - SystemParameters.VerticalScrollBarWidth 
-                                - GridView.Columns[0].Width 
-                                - PlaylistContent.Padding.Left 
-                                - PlaylistContent.Padding.Right;
+            SetSongGridColumnWidths();
+        }
 
-            GridView.Columns[1].Width = totalWidth * 4/12;
-            GridView.Columns[2].Width = totalWidth * 2/12;
-            GridView.Columns[3].Width = totalWidth * 1.5/12;
-            GridView.Columns[4].Width = totalWidth * 4.65/12;
+        private void SetSongGridColumnWidths()
+        {
+            if (GridView.Columns.Count < 2) return;
+
+            // Fixed columns: index (0) and duration (last)
+            double totalWidth =
+                PlaylistContent.ActualWidth
+                - SystemParameters.VerticalScrollBarWidth
+                - GridView.Columns[0].Width // index column
+                - GridView.Columns[^1].Width // duration column
+                - PlaylistContent.Padding.Left;
+                /*
+                - PlaylistContent.Padding.Right;
+                */
+
+            if (totalWidth <= 0) return;
+
+            // Find best preset for current width
+            double[] ratios = GetPresetForWidth(totalWidth);
+
+            // 3. Apply ratios to song columns: Title, Artist, DateAdded
+            // Assume:
+            //   Col 0 = index (fixed)
+            //   Col 1 = title
+            //   Col 2 = artist
+            //   Col 3 = date added
+            //   Col 4 = duration (fixed)
+            for (int i = 0; i < GridView.Columns.Count - 2 && i <= ratios.Length; i++)
+            {
+                var ratio = ratios[i];
+
+                if (ratio <= 0)
+                {
+                    // Hide this column by shrinking it;
+                    // alternatively, you could collapse the header template.
+                    GridView.Columns[i + 1].Width = 0;
+                }
+                else
+                {
+                    GridView.Columns[i + 1].Width = totalWidth * ratio;
+                }
+            }
+        }
+
+        private double[] GetPresetForWidth(double totalWidth)
+        {
+            // Presets sorted by threshold
+            var thresholds = _songColumnPresets.Keys.OrderBy(t => t).ToArray();
+
+            double chosenThreshold = thresholds[0];
+
+            foreach (var t in thresholds)
+            {
+                if (totalWidth >= t)
+                    chosenThreshold = t;
+                else
+                    break;
+            }
+
+            return _songColumnPresets[chosenThreshold];
         }
 
         private void PlaylistContent_OnMouseDoubleClick(object sender, MouseButtonEventArgs mouseButtonEventArgs)
         {
-            if (PlaylistContent.SelectedItem is not Song selectedSong) return;
+            if (PlaylistContent.SelectedItem is not PlaylistSong selectedSong) return;
             
             // Determine which playlist view-model is currently selected in the sidebar
             if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
@@ -315,6 +386,7 @@ namespace Riffle.Player.Windows
         {
             // Determine which playlist view-model is currently selected in the sidebar
             if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
+            ViewModel.SongsViewModel.RefreshSongs();
             ViewModel.PlayFrom(selectedVm);
         }
 

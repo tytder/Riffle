@@ -10,26 +10,30 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (values.Length < 2) return false;
+        if (values.Length != 2) return false;
         
-        if (values.Length == 2)
+        if (values[0] is PlaylistViewModel openPlaylist
+            && values[1] is PlaylistViewModel playingPlaylist)
         {
-            if (values[0] is not PlaylistViewModel openPlaylist) return false;
-            if (values[1] is not PlaylistViewModel playingPlaylist) return false;
-
             return Equals(openPlaylist, playingPlaylist);
         }
-
-        if (values.Length == 4)
+            
+        if (values[0] is PlaylistSong thisRowSong
+            && values[1] is PlaylistSong currentSong)
         {
-            if (values[0] is not Song thisRowSong) return false;
-            if (values[1] is not Song currentSong) return false;
+            return Equals(thisRowSong, currentSong);
+        }
+
+        /*if (values.Length == 4)
+        {
+            if (values[0] is not PlaylistSong thisRowSong) return false;
+            if (values[1] is not PlaylistSong currentSong) return false;
             if (values[2] is not PlaylistViewModel openPlaylist) return false;
             if (values[3] is not PlaylistViewModel playingPlaylist) return false;
 
             // Highlight if the song matches AND the playlist currently being viewed is the playlist thats playing
             return Equals(thisRowSong, currentSong) && Equals(openPlaylist, playingPlaylist);
-        }
+        }*/
 
         return false;
     }
@@ -42,8 +46,8 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
     
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        var song = value as Song;
-        var currentSong = parameter as Song;
+        var song = value as PlaylistSong;
+        var currentSong = parameter as PlaylistSong;
         return song != null && currentSong != null && song.Equals(currentSong);
     }
 

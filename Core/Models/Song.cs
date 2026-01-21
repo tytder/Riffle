@@ -19,9 +19,10 @@ public class Song
     public string DurationDisplay => Duration.TotalSeconds.ToMmSs();
     public string FilePath { get; private set; }
     public Guid Id { get; } = Guid.NewGuid();
-    public DateTime AddedAt { get; set; }
     
     public bool IsAvailable => File.Exists(FilePath);
+    
+    public ICollection<PlaylistSong> PlaylistItems { get; set; }
     
     public override bool Equals(object? obj)
     {

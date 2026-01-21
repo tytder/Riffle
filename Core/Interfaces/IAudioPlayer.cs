@@ -5,7 +5,7 @@ namespace Riffle.Core.Interfaces
 {
     public interface IAudioPlayer
     {
-        void Play(Song song);
+        void Play(PlaylistSong song);
         void TogglePlaying();
         void StopAll();
         bool IsPlaying { get;  }

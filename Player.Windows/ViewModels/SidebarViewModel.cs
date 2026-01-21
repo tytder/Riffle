@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using Riffle.Core.Models;
+using Riffle.Data;
 using Riffle.Player.Windows.Services;
 
 #nullable enable
@@ -9,38 +10,35 @@ namespace Riffle.Player.Windows.ViewModels;
 
 public class SidebarViewModel
 {
-    private readonly MusicService _musicService;
+    private readonly ILibraryManager _libraryManager;
 
     public ObservableCollection<PlaylistViewModel> Playlists { get; } = new();
 
-    public SidebarViewModel(MusicService musicService)
+    public SidebarViewModel(ILibraryManager libraryManager)
     {
-        _musicService = musicService;
+        _libraryManager = libraryManager;
         LoadPlaylists();
     }
 
     private void LoadPlaylists()
     {
-        // Add special "All Songs" entry
-        Playlists.Add(new PlaylistViewModel("All Songs", null));
-
         // Add real playlists from DB
-        var playlists = _musicService.GetAllPlaylists();
+        var playlists = _libraryManager.GetAllPlaylists();
         foreach (var p in playlists)
         {
             Playlists.Add(new PlaylistViewModel(p.Name, p));
         }
     }
 
-    public PlaylistViewModel AddPlaylist(Playlist? playlist)
+    public PlaylistViewModel AddAllSongsPlaylist()
     {
-        if (playlist == null)
-        {
-            var allSongs = new PlaylistViewModel("All Songs", null);
-            Playlists.Insert(0, allSongs);
-            return allSongs;
-        }
-        
+        var allSongs = new PlaylistViewModel("All Songs", null);
+        Playlists.Insert(0, allSongs);
+        return allSongs;
+    }
+    
+    public PlaylistViewModel AddPlaylist(Playlist playlist)
+    {
         var newPlaylist = new PlaylistViewModel(playlist.Name, playlist);
         Playlists.Add(newPlaylist);
         return newPlaylist;

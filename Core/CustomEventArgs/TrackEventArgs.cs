@@ -4,10 +4,10 @@ namespace Riffle.Core.CustomEventArgs;
 
 public class TrackEventArgs : EventArgs
 {
-    public Song Song { get; }
+    public PlaylistSong PlaylistSong { get; }
 
-    public TrackEventArgs(Song song)
+    public TrackEventArgs(PlaylistSong playlistSong)
     {
-        Song = song;
+        PlaylistSong = playlistSong;
     }
 }
