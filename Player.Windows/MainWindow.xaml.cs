@@ -300,11 +300,17 @@ namespace Riffle.Player.Windows
         private void PlaylistList_OnSelected(object sender, RoutedEventArgs e)
         {
             if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
+            OpenPlaylist(selectedVm);
+        }
+
+        private void OpenPlaylist(PlaylistViewModel selectedVm)
+        {
             ViewModel.SongsViewModel.LoadSongs(selectedVm);
             SetPlaylistHeaderPlaying(_player.IsPlaying, selectedVm);
             PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
+            PlaylistList.SelectedItem = selectedVm;
         }
-        
+
         private void PlaylistList_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // Determine which playlist view-model is currently selected in the sidebar
@@ -394,6 +400,19 @@ namespace Riffle.Player.Windows
         private void ClearQueueClick(object sender, RoutedEventArgs e)
         {
             ViewModel.ClearUserQueue();
+        }
+
+        private void GoToCurrentSongPlaylist(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.CurrentSong == null) return;
+            PlaylistViewModel songPlaylist = ViewModel.GetPlaylistModel(ViewModel.CurrentSong);
+            OpenPlaylist(songPlaylist);
+        }
+
+        private void GoToCurrentPlaylistPlaying(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.CurrentPlaylistPlaying == null) return; 
+            OpenPlaylist(ViewModel.CurrentPlaylistPlaying);
         }
     }
 }

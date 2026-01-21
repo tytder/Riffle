@@ -369,9 +369,25 @@
                         </Grid.RowDefinitions>
                         <StackPanel
                             Grid.Row="0"> <!-- Now playing -->
-                            <TextBlock Text="Now Playing" 
-                                       FontSize="12" Foreground="Black"
-                                       Padding="0,10,0,0"/>
+                            <StackPanel
+                                Orientation="Horizontal"
+                                >
+                                <TextBlock FontSize="12" Foreground="Black"
+                                           Text="Now playing from: "
+                                           Padding="0,10,10,0"/>
+                                <Button Width="auto"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Background="Transparent"
+                                        Foreground="Black"
+                                        BorderThickness="0"
+                                        Click="GoToCurrentSongPlaylist">
+                                    <Run Text="{Binding ViewModel.CurrentSongPlaylistName, 
+                                                          Mode=OneWay,
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                </Button>
+                                
+                            </StackPanel>
                             <TextBlock Text="{Binding ViewModel.CurrentSongTitle, RelativeSource={RelativeSource AncestorType=Window}}"
                                        FontSize="12" Foreground="Black"
                                        Padding="10,0,0,0"/>
@@ -430,13 +446,25 @@
                                     <RowDefinition Height="Auto"/> <!-- Tab headers -->
                                     <RowDefinition Height="*"/>    <!-- Tab content -->
                                 </Grid.RowDefinitions>
-                                <TextBlock
-                                    FontSize="12" Foreground="Black" Padding="0,10,0,0">
-                                    <Run Text="Next from: "/>
-                                    <Run Text="{Binding ViewModel.CurrentPlaylistName, 
+                                <StackPanel Orientation="Horizontal" 
+                                    Grid.Row="0">
+                                    <TextBlock
+                                        Padding="0,10,10,0"
+                                        FontSize="12" Foreground="Black" 
+                                        Text="Next from: "/>
+                                    <Button
+                                        Width="auto"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Background="Transparent"
+                                        Foreground="Black"
+                                        BorderThickness="0"
+                                        Click="GoToCurrentPlaylistPlaying">
+                                        <Run Text="{Binding ViewModel.CurrentPlaylistName, 
                                                           Mode=OneWay,
                                                           RelativeSource={RelativeSource AncestorType=Window}}"/>
-                                </TextBlock>
+                                    </Button>
+                                </StackPanel>
                                 <ListView
                                     Grid.Row="1"
                                     x:Name="QueueListView"

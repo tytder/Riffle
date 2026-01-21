@@ -18,8 +18,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public SidebarViewModel SidebarViewModel { get; }
     public SongsViewModel SongsViewModel { get; }
 
-    private PlaylistViewModel? _selectedPlaylist;
-    public PlaylistViewModel? SelectedPlaylist
+    // SelectedPlaylist sets and gets this variable, and SelectedPlaylist is set on constructor so in extension this is as well.
+    private PlaylistViewModel _selectedPlaylist = null!; 
+    public PlaylistViewModel SelectedPlaylist
     {
         get => _selectedPlaylist;
         set
@@ -28,11 +29,22 @@ public class MainWindowViewModel : INotifyPropertyChanged
             {
                 _selectedPlaylist = value;
                 OnPropertyChanged();
-                SongsViewModel.LoadSongs(value!);
+                SongsViewModel.LoadSongs(value);
             }
         }
     }
 
+    public string CurrentSongPlaylistName
+    {
+        get
+        {
+            if (CurrentSong == null) return "";
+            if (CurrentSong.PlayedFrom == null) return "All Songs";
+            return CurrentSong.PlayedFrom.Name;
+        }
+    }
+    
+    // TODO: change to also showcase mixes of playlists later on
     public string? CurrentPlaylistName => CurrentPlaylistPlaying?.Name; 
     private PlaylistViewModel? _currentPlaylistPlaying;
     public PlaylistViewModel? CurrentPlaylistPlaying
@@ -51,9 +63,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
     }
     public bool IsCurrentPlayingPlaylistQueueVisible => CurrentPlaylistPlaying != null;
 
-    public string CurrentSongTitle => _playbackManager.CurrentSong?.Title ?? "No song selected";
-    public string CurrentSongArtist => _playbackManager.CurrentSong?.Artist ?? "";
-    public Song? CurrentSong => _playbackManager.CurrentSong;
+    public string CurrentSongTitle => _playbackManager.CurrentSong?.Song.Title ?? "No song selected";
+    public string CurrentSongArtist => _playbackManager.CurrentSong?.Song.Artist ?? "";
+    public SongPlayed? CurrentSong => _playbackManager.CurrentSong;
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
     public ObservableQueue<Song> TotalQueue => _playbackManager.TotalQueue;
@@ -75,11 +87,12 @@ public class MainWindowViewModel : INotifyPropertyChanged
     }
     public ObservableQueue<SongPlayed> RecentlyPlayed => _playbackManager.RecentlyPlayed;
     public bool IsLooping => _playbackManager.IsLooping;
+
     public event EventHandler<PlaylistEventArgs>? PlaylistRemoved;
 
     private string GetPlaylistInfo()
     {
-        var playlist = SelectedPlaylist?.Playlist?.PlaylistItems.ToList() ?? _musicService.GetAllSongs();
+        var playlist = SelectedPlaylist.Playlist?.PlaylistItems.ToList() ?? _musicService.GetAllSongs();
         var count = playlist.Count;
         var totalDuration = TimeSpan.FromSeconds(playlist.Sum(s => s.Duration.TotalSeconds));
         return $"{count} songs, {(int)totalDuration.TotalHours} hr {totalDuration.Minutes} min";
@@ -145,6 +158,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(CurrentSong));
             OnPropertyChanged(nameof(CurrentSongTitle));
             OnPropertyChanged(nameof(CurrentSongArtist));
+            OnPropertyChanged(nameof(CurrentSongPlaylistName));
         }
     }
 
@@ -189,4 +203,11 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    public PlaylistViewModel GetPlaylistModel(SongPlayed viewModelCurrentSong)
+    {
+        var playlistViewModel = SidebarViewModel.GetPlaylist(viewModelCurrentSong.PlayedFrom?.Id ?? Guid.Empty);
+        playlistViewModel ??= SidebarViewModel.AddPlaylist(viewModelCurrentSong.PlayedFrom);
+        return playlistViewModel;
+    }
 }

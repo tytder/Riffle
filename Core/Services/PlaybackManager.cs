@@ -22,8 +22,8 @@ public class PlaybackManager : INotifyPropertyChanged
 
     public ObservableQueue<Song> TotalQueue;
     
-    private Song? _currentSong;
-    public Song? CurrentSong
+    private SongPlayed? _currentSong;
+    public SongPlayed? CurrentSong
     {
         get => _currentSong;
         set
@@ -67,7 +67,8 @@ public class PlaybackManager : INotifyPropertyChanged
 
         RecreateTotalQueue(song);
         
-        CurrentSong = TotalQueue.Peek();
+        var curSong = TotalQueue.Peek();
+        CurrentSong = new SongPlayed(curSong, DateTime.Now, playlist); 
         _player.Play(CurrentSong);
     }
 
@@ -77,8 +78,6 @@ public class PlaybackManager : INotifyPropertyChanged
         {
             var handler = TrackStopped;
             handler?.Invoke(this, new TrackEventArgs(CurrentSong));
-            var previousSong = new SongPlayed(CurrentSong, DateTime.Now);
-            RecentlyPlayed.Enqueue(previousSong);
         }
         _player.StopAll();
     }

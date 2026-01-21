@@ -32,8 +32,15 @@ public class SidebarViewModel
         }
     }
 
-    public PlaylistViewModel AddPlaylist(Playlist playlist)
+    public PlaylistViewModel AddPlaylist(Playlist? playlist)
     {
+        if (playlist == null)
+        {
+            var allSongs = new PlaylistViewModel("All Songs", null);
+            Playlists.Insert(0, allSongs);
+            return allSongs;
+        }
+        
         var newPlaylist = new PlaylistViewModel(playlist.Name, playlist);
         Playlists.Add(newPlaylist);
         return newPlaylist;
