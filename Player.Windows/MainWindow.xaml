@@ -6,6 +6,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
+        xmlns:viewModels="clr-namespace:Riffle.Player.Windows.ViewModels"
         mc:Ignorable="d"
         WindowStyle="None"
         Title="Riffle Music Player" Height="600" Width="900"
@@ -103,12 +104,16 @@
 
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
+                        <d:Style.DataContext>
+                            <!-- Tell Rider that the DataContext for each row is PlaylistSong -->
+                            <viewModels:PlaylistViewModel />
+                        </d:Style.DataContext>
                         <Style.Triggers>
                             <DataTrigger Value="True">
                                 <DataTrigger.Binding>
                                     <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                        <Binding Path="." /> <!-- The playlist in this row -->
-                                        <Binding Path="ViewModel.CurrentPlaylistPlaying"
+                                        <Binding Path=".Playlist.Id" /> <!-- The playlist in this row -->
+                                        <Binding Path="ViewModel.CurrentPlaylistPlaying.Playlist.Id"
                                                  RelativeSource="{RelativeSource AncestorType=Window}" />
                                     </MultiBinding>
                                 </DataTrigger.Binding>
@@ -252,13 +257,16 @@
 
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
+                                <d:Style.DataContext>
+                                    <models:PlaylistSong />
+                                </d:Style.DataContext>
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Style.Triggers>
                                     <DataTrigger Value="True">
                                         <DataTrigger.Binding>
                                             <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                                <Binding Path="." /> <!-- Song in this row -->
-                                                <Binding Path="ViewModel.CurrentSong.Song" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                <Binding Path=".Song.Id" /> <!-- Song in this row -->
+                                                <Binding Path="ViewModel.CurrentSong.Song.Id" RelativeSource="{RelativeSource AncestorType=Window}" />
                                                 <!--<Binding Path="ViewModel.SelectedPlaylist" RelativeSource="{RelativeSource AncestorType=Window}" />
                                                 <Binding Path="ViewModel.CurrentPlaylistPlaying" RelativeSource="{RelativeSource AncestorType=Window}" />-->
                                             </MultiBinding>

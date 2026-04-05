@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
+﻿using System.Collections.ObjectModel;
 using Riffle.Core.Models;
 using Riffle.Data;
-using Riffle.Player.Windows.Services;
 
 namespace Riffle.Player.Windows.ViewModels;
 #nullable enable
@@ -34,9 +31,7 @@ public class SongsViewModel
 
         PlaylistSongs.Clear();
 
-        var songs = _currentPlaylistVm.Playlist == null
-            ? _libraryManager.GetAllSongsPlaylist() // “All Songs”
-            : _libraryManager.GetSongsForPlaylist(_currentPlaylistVm.Playlist);
+        var songs = _libraryManager.GetSongsForPlaylist(_currentPlaylistVm.Playlist.Id);
 
         foreach (var song in songs)
         {

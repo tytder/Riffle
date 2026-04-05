@@ -21,17 +21,18 @@ public class LibraryManager : ILibraryManager
         await EnsureAllSongsPlaylistAsync();
     }
 
-    public PlaylistSong AddSong(Song newSong, Playlist playlistToAdd)
+    public PlaylistSong AddNewSongToPlaylist(Song newSong, Guid playlistToAddId)
     {
         // Always add song (and link) to All Songs first
         var allSongs = _db.Playlists.First(p => p.Id == AllSongsPlaylistId);
         var allSongsLink = _musicService.AddSong(newSong, allSongs);
 
         // If target playlist is All Songs, we’re done
-        if (playlistToAdd.Id == AllSongsPlaylistId)
+        if (playlistToAddId == AllSongsPlaylistId)
             return allSongsLink;
 
         // Otherwise add another PlaylistSong row reusing the same Song
+        Playlist playlistToAdd = _db.Playlists.First(p => p.Id == playlistToAddId);
         var playlistLink = new PlaylistSong(allSongsLink.Song, playlistToAdd);
 
         _db.PlaylistSongs.Add(playlistLink);
@@ -40,10 +41,22 @@ public class LibraryManager : ILibraryManager
         return playlistLink;
     }
 
-
-    public IEnumerable<PlaylistSong> GetSongsForPlaylist(Playlist playlist)
+    public PlaylistSong AddExistingSongToPlaylist(Guid songId, Guid playlistToAddId)
     {
-        return _musicService.GetSongsForPlaylist(playlist);
+        var playlist = _db.Playlists.First(p => p.Id == playlistToAddId);
+        var song     = _db.Songs.First(s => s.Id == songId);
+
+        var playlistSong = new PlaylistSong(song, playlist);
+        _db.PlaylistSongs.Add(playlistSong);
+        _db.SaveChanges();
+
+        return playlistSong;
+    }
+
+
+    public IEnumerable<PlaylistSong> GetSongsForPlaylist(Guid playlistId)
+    {
+        return _musicService.GetSongsForPlaylist(playlistId);
     }
 
     public IEnumerable<PlaylistSong> GetAllSongsPlaylist()
@@ -65,12 +78,17 @@ public class LibraryManager : ILibraryManager
         return _musicService.CreatePlaylist(playlistWindowPlaylistName);
     }
 
-    public void DeletePlaylist(Playlist playlist)
+    public void DeletePlaylist(Guid playlistId)
     {
-        _musicService.DeletePlaylist(playlist);
+        _musicService.DeletePlaylist(playlistId);
     }
 
-    private async Task<Playlist> EnsureAllSongsPlaylistAsync()
+    public void MarkLastPlayedPlaylist(Guid playlistId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<Playlist> EnsureAllSongsPlaylistAsync()
     {
         const string AllSongsName = "All Songs";
         var playlist = await _db.Playlists
@@ -92,10 +110,13 @@ public interface ILibraryManager
 {
     Guid AllSongsPlaylistId { get; }
     void Initialize();
-    PlaylistSong AddSong(Song newSong, Playlist playlistToAdd);
-    IEnumerable<PlaylistSong> GetSongsForPlaylist(Playlist playlist);
+    Task<Playlist> EnsureAllSongsPlaylistAsync();
+    PlaylistSong AddNewSongToPlaylist(Song newSong, Guid playlistToAddId);
+    PlaylistSong AddExistingSongToPlaylist(Guid songId, Guid playlistToAddId);
+    IEnumerable<PlaylistSong> GetSongsForPlaylist(Guid playlistId);
     IEnumerable<PlaylistSong> GetAllSongsPlaylist();
     IEnumerable<Playlist> GetAllPlaylists();
     Playlist CreatePlaylist(string playlistWindowPlaylistName);
-    void DeletePlaylist(Playlist playlist);
+    void DeletePlaylist(Guid playlistId);
+    void MarkLastPlayedPlaylist(Guid playlistId);
 }

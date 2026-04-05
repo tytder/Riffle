@@ -1,17 +1,34 @@
-﻿namespace Riffle.Core.Models;
+﻿using Riffle.Core.Utilities;
+
+namespace Riffle.Core.Models;
 
 public class SongPlayed
 {
-    public PlaylistSong Song { get; }
-    public DateTime PlayedAt { get; }
-    public Playlist? PlayedFrom { get; }
+    public Song Song { get; private set; }
+    public Guid SongId { get; private set; }
+    public DateTime PlayedAt { get; private set; }
+    public Playlist PlayedFrom { get; private set; }
+    public Guid? PlayedFromId { get; private set; }
+    public string? PlayedFromName { get; set; }
+    public Guid Id { get; private set; }
+    
+    public string HowLongAgo => PlayedAt.ToFriendlyAge();
 
-    public SongPlayed(PlaylistSong song, DateTime playedAt, Playlist? playedFrom)
+    public SongPlayed(Song song, DateTime playedAt, Playlist playedFrom)
     {
         Song = song;
+        SongId = song.Id;
         PlayedAt = playedAt;
         PlayedFrom = playedFrom;
+        PlayedFromId = playedFrom.Id;
+        PlayedFromName = playedFrom.Name;
+        Id = Guid.NewGuid();
+    }
+
+    public SongPlayed()
+    {
+        
     }
     
-    public static implicit operator PlaylistSong(SongPlayed songPlayed) => songPlayed.Song;
+    public static implicit operator Song(SongPlayed songPlayed) => songPlayed.Song;
 }

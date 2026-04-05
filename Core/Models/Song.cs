@@ -5,12 +5,18 @@ namespace Riffle.Core.Models;
 # nullable enable
 public class Song
 {
+    public Song()
+    {
+        
+    }
+    
     public Song(string title, string? artist, TimeSpan duration, string filePath)
     {
         Title = title;
         Artist = artist;
         Duration = duration;
         FilePath = filePath;
+        Id = Guid.NewGuid();
     }
 
     public string Title { get; private set; }
@@ -18,11 +24,11 @@ public class Song
     public TimeSpan Duration { get; private set; }
     public string DurationDisplay => Duration.TotalSeconds.ToMmSs();
     public string FilePath { get; private set; }
-    public Guid Id { get; } = Guid.NewGuid();
+    public Guid Id { get; private set; }
     
     public bool IsAvailable => File.Exists(FilePath);
-    
-    public ICollection<PlaylistSong> PlaylistItems { get; set; }
+
+    public ICollection<PlaylistSong> PlaylistItems { get; set; } = null!;
     
     public override bool Equals(object? obj)
     {

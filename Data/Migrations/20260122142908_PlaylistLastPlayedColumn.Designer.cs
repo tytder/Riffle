@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Riffle.Data;
 
@@ -10,9 +11,11 @@ using Riffle.Data;
 namespace Riffle.Data.Migrations
 {
     [DbContext(typeof(MusicDbContext))]
-    partial class MusicDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260122142908_PlaylistLastPlayedColumn")]
+    partial class PlaylistLastPlayedColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -44,8 +47,10 @@ namespace Riffle.Data.Migrations
 
             modelBuilder.Entity("Riffle.Core.Models.PlaylistSong", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("PlaylistId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SongId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("DateAdded")
@@ -53,15 +58,7 @@ namespace Riffle.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<Guid>("PlaylistId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("SongId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlaylistId");
+                    b.HasKey("PlaylistId", "SongId");
 
                     b.HasIndex("SongId");
 
@@ -93,33 +90,6 @@ namespace Riffle.Data.Migrations
                     b.ToTable("Songs");
                 });
 
-            modelBuilder.Entity("Riffle.Core.Models.SongPlayed", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("PlayedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("PlayedFromId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PlayedFromName")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("SongId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlayedFromId");
-
-                    b.HasIndex("SongId");
-
-                    b.ToTable("SongPlayed", (string)null);
-                });
-
             modelBuilder.Entity("Riffle.Core.Models.PlaylistSong", b =>
                 {
                     b.HasOne("Riffle.Core.Models.Playlist", "Playlist")
@@ -135,24 +105,6 @@ namespace Riffle.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Playlist");
-
-                    b.Navigation("Song");
-                });
-
-            modelBuilder.Entity("Riffle.Core.Models.SongPlayed", b =>
-                {
-                    b.HasOne("Riffle.Core.Models.Playlist", "PlayedFrom")
-                        .WithMany()
-                        .HasForeignKey("PlayedFromId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Riffle.Core.Models.PlaylistSong", "Song")
-                        .WithMany()
-                        .HasForeignKey("SongId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PlayedFrom");
 
                     b.Navigation("Song");
                 });

@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.DependencyInjection;
 using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Models;
 using Riffle.Core.Services;
@@ -41,7 +40,6 @@ public class MainWindowViewModel : INotifyPropertyChanged
         get
         {
             if (CurrentSong == null) return "";
-            if (CurrentSong.PlayedFrom == null) return "All Songs";
             return CurrentSong.PlayedFrom.Name;
         }
     }
@@ -67,8 +65,8 @@ public class MainWindowViewModel : INotifyPropertyChanged
     
     public bool IsCurrentPlayingPlaylistQueueVisible => CurrentPlaylistPlaying != null;
 
-    public string CurrentSongTitle => _playbackManager.CurrentSong?.Song.Song.Title ?? "No song selected";
-    public string CurrentSongArtist => _playbackManager.CurrentSong?.Song.Song.Artist ?? "";
+    public string CurrentSongTitle => _playbackManager.CurrentSong?.Song.Title ?? "No song selected";
+    public string CurrentSongArtist => _playbackManager.CurrentSong?.Song.Artist ?? "";
     public SongPlayed? CurrentSong => _playbackManager.CurrentSong;
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
@@ -97,9 +95,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
 
     private string GetPlaylistInfo()
     {
-        var playlist 
-            = SelectedPlaylist.Playlist?.PlaylistItems.ToArray() 
-              ?? _libraryManager.GetAllSongsPlaylist().ToArray();
+        var playlist = SelectedPlaylist.Playlist.PlaylistItems.ToArray();
         var count = playlist.Count();
         var totalDuration = TimeSpan.FromSeconds(playlist.Sum(ps => ps.Song.Duration.TotalSeconds));
         return $"{count} songs, {(int)totalDuration.TotalHours} hr {totalDuration.Minutes} min";
@@ -117,7 +113,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         SongsViewModel = songsVm;
         //SongsViewModel = new SongsViewModel(musicService);
         SelectedPlaylist = SidebarViewModel.Playlists[0];
-        _playbackManager = new PlaybackManager(player, _libraryManager.GetAllSongsPlaylist);
+        _playbackManager = new PlaybackManager(player);
         _playbackManager.PropertyChanged += Playback_PropertyChanged;
         PlaylistRemoved += _playbackManager.OnPlaylistRemoved;
     }
@@ -148,7 +144,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         // - just grab the current playlist
         // - or if selectedVm is null -> represents "All Songs"
         // GetAllSongs already handles if there is no AllSongs playlist so we can ignore the null warning
-        Playlist? playlist = selectedPlaylistViewModel.Playlist;
+        Playlist playlist = selectedPlaylistViewModel.Playlist;
         songToPlay ??= GetFirstSong(selectedPlaylistViewModel.Playlist);
 
         // Update "currently playing" state in the MainWindowViewModel
@@ -158,11 +154,10 @@ public class MainWindowViewModel : INotifyPropertyChanged
         _playbackManager.PlayFrom(songToPlay, playlist);
     }
 
-    private PlaylistSong GetFirstSong(Playlist? selectPlaylist)
+    private PlaylistSong GetFirstSong(Playlist selectPlaylist)
     {
-        var playlist 
-            = selectPlaylist?.PlaylistItems.ToArray() 
-              ?? _libraryManager.GetAllSongsPlaylist().ToArray();
+        var playlist
+            = selectPlaylist.PlaylistItems.ToArray();
         return playlist[0]; // TODO: take into account shuffle logic
     }
 
@@ -177,11 +172,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
         }
     }
 
-    public PlaylistSong AddSong(Song newSong, Playlist? playlist)
+    public PlaylistSong AddSong(Song newSong, Playlist playlist)
     {
-        var newPlaylistSong = _libraryManager.AddSong(newSong, playlist);
-        
-        //playlist?.PlaylistItems.Add(newPlaylistSong);
+        var newPlaylistSong = _libraryManager.AddNewSongToPlaylist(newSong, playlist.Id);
         
         // Refresh the songs in the viewmodel
         SongsViewModel.LoadSongs(SelectedPlaylist);
@@ -206,7 +199,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     
     public void DeletePlaylist(PlaylistViewModel selectedVmPlaylist)
     {
-        if (selectedVmPlaylist.Playlist != null) _libraryManager.DeletePlaylist(selectedVmPlaylist.Playlist);
+        _libraryManager.DeletePlaylist(selectedVmPlaylist.Playlist.Id);
         SidebarViewModel.RemovePlaylist(selectedVmPlaylist);
         var handler = PlaylistRemoved;
         handler?.Invoke(this, new PlaylistEventArgs(selectedVmPlaylist.Playlist));
@@ -223,7 +216,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
 
     public PlaylistViewModel GetPlaylistModel(SongPlayed viewModelCurrentSong)
     {
-        var playlistViewModel = SidebarViewModel.GetPlaylist(viewModelCurrentSong.PlayedFrom?.Id ?? Guid.Empty);
+        var playlistViewModel = SidebarViewModel.GetPlaylist(viewModelCurrentSong.PlayedFrom.Id);
         playlistViewModel ??= SidebarViewModel.AddPlaylist(viewModelCurrentSong.PlayedFrom);
         return playlistViewModel;
     }

@@ -17,6 +17,7 @@ public class MusicDbContext : DbContext
     public DbSet<Playlist> Playlists => Set<Playlist>();
     
     public DbSet<PlaylistSong> PlaylistSongs => Set<PlaylistSong>();
+    public DbSet<SongPlayed> SongHistory => Set<SongPlayed>();
 
     public MusicDbContext(DbContextOptions<MusicDbContext> options) : base(options)
     {
@@ -39,6 +40,8 @@ public class MusicDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            
+            entity.Ignore(s => s.IsAvailable);
         });
 
         modelBuilder.Entity<Playlist>(entity =>
@@ -46,24 +49,63 @@ public class MusicDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.IsAllSongs).HasDefaultValue(false);
+            entity.Property(e => e.LastPlayed)
+                .HasColumnType("TEXT")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .IsRequired();
         });
 
         modelBuilder.Entity<PlaylistSong>(entity =>
         {
-            entity.HasKey(ps => new { ps.PlaylistId, ps.SongId });
+            entity.HasKey(ps => ps.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.HasOne(ps => ps.Playlist)
                 .WithMany(p => p.PlaylistItems)
-                .HasForeignKey(ps => ps.PlaylistId);
+                .HasForeignKey(ps => ps.PlaylistId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(ps => ps.Song)
                 .WithMany(s => s.PlaylistItems)
-                .HasForeignKey(ps => ps.SongId);
+                .HasForeignKey(ps => ps.SongId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.Property(ps => ps.DateAdded)
                 .HasColumnType("TEXT")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .IsRequired();
+            
+            entity.Ignore(ps => ps.HowLongAgo);
+        });
+        
+        modelBuilder.Entity<SongPlayed>(entity =>
+        {
+            entity.ToTable("SongPlayed");
+
+            entity.HasKey(sp => sp.Id);
+
+            entity.Property(sp => sp.Id)
+                .ValueGeneratedNever();
+
+            entity.Property(sp => sp.PlayedAt)
+                .IsRequired();
+
+            entity.Property(sp => sp.PlayedFromName)
+                .HasMaxLength(256); // or whatever feels right
+
+            entity.HasOne(sp => sp.Song)
+                .WithMany()
+                .HasForeignKey(sp => sp.SongId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(sp => sp.PlayedFrom)
+                .WithMany()
+                .HasForeignKey(sp => sp.PlayedFromId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.Ignore(sp => sp.HowLongAgo);
         });
     }
 }

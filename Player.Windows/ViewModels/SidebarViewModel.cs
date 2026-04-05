@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Riffle.Core.Models;
 using Riffle.Data;
-using Riffle.Player.Windows.Services;
 
 #nullable enable
 namespace Riffle.Player.Windows.ViewModels;
@@ -29,13 +28,6 @@ public class SidebarViewModel
             Playlists.Add(new PlaylistViewModel(p.Name, p));
         }
     }
-
-    public PlaylistViewModel AddAllSongsPlaylist()
-    {
-        var allSongs = new PlaylistViewModel("All Songs", null);
-        Playlists.Insert(0, allSongs);
-        return allSongs;
-    }
     
     public PlaylistViewModel AddPlaylist(Playlist playlist)
     {
@@ -53,24 +45,7 @@ public class SidebarViewModel
     public PlaylistViewModel? GetPlaylist(Guid id)
     {
         //if (id == Guid.Empty) return Playlists.First(pl => pl.Name == "All Songs");
-        return Playlists.FirstOrDefault(pl => IsWantedPlaylist(pl, id));
-    }
-
-    private bool IsWantedPlaylist(PlaylistViewModel playlist, Guid wantedId)
-    {
-        if (playlist.Playlist == null)
-        {
-            // if playlist was null (normally only "All Songs" playlist)
-            // and the wanted id is empty (also normally only "All Songs" playlist)
-            // then the current playlist is the wanted one, return true.
-            if (wantedId == Guid.Empty) return true; 
-            
-            // else the "All Songs" playlist is not the wanted playlist, return false.
-            return false;
-        }
-        
-        // simply check the id if the "All Songs" playlist is not the wanted playlist.
-        return playlist.Playlist.Id == wantedId;
+        return Playlists.FirstOrDefault(pl => pl.Playlist.Id == id);
     }
 
     public void RemovePlaylist(PlaylistViewModel selectedVmPlaylist)
@@ -80,11 +55,13 @@ public class SidebarViewModel
 
     public PlaylistViewModel GetAllSongsPlaylist()
     {
-        var allSongs = GetPlaylist(Guid.Empty);
-        allSongs ??= Playlists.FirstOrDefault(pl => pl.Playlist == null);
-        allSongs ??= Playlists.FirstOrDefault(pl => pl.Name == "All Songs");
-
-        if (allSongs == null) throw new NullReferenceException("All Songs not found.");
+        var allSongs = GetPlaylist(_libraryManager.AllSongsPlaylistId);
+        if (allSongs == null)
+        {
+            var allSongsPlaylist = _libraryManager.EnsureAllSongsPlaylistAsync().Result;
+            allSongs = new PlaylistViewModel(allSongsPlaylist.Name, allSongsPlaylist);
+            Playlists.Add(allSongs);
+        } 
         
         return allSongs;
     }

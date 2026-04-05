@@ -148,11 +148,11 @@ namespace Riffle.Player.Windows
 
         private void Player_TrackLoaded(object? sender, TrackEventArgs e)
         {
-            TxtTotalTime.Text = e.PlaylistSong.Song.Duration.TotalSeconds.ToMmSs();
-            SeekBar.Maximum = e.PlaylistSong.Song.Duration.TotalSeconds;
+            TxtTotalTime.Text = e.Song.Duration.TotalSeconds.ToMmSs();
+            SeekBar.Maximum = e.Song.Duration.TotalSeconds;
             SeekBar.Value = 0;
-            TxtSongTitle.Text = e.PlaylistSong.Song.Title;
-            TxtArtistName.Text = e.PlaylistSong.Song.Artist;
+            TxtSongTitle.Text = e.Song.Title;
+            TxtArtistName.Text = e.Song.Artist;
             _isTeleportingSeekBarThumb = false;
             QueueListView.ItemsSource = ViewModel.TotalQueue;
             RecentlyPlayedListView.ItemsSource = ViewModel.RecentlyPlayed;
@@ -275,7 +275,7 @@ namespace Riffle.Player.Windows
 
             if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm) return;
             // The actual playlist, or null for "All Songs"
-            Playlist? playlist = selectedVm.Playlist;
+            Playlist playlist = selectedVm.Playlist;
 
             Song newSong = new Song(title, artist, duration, filePath);
 

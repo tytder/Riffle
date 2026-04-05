@@ -16,7 +16,6 @@ public class PlaybackManager : INotifyPropertyChanged
     public ObservableQueue<SongPlayed> RecentlyPlayed;
     
     private readonly IAudioPlayer _player;
-    private readonly Func<IEnumerable<PlaylistSong>> _getAllSongsMethod;
     private Playlist? _playingPlaylist;
     private List<PlaylistSong>? _playlistSource;
 
@@ -38,10 +37,9 @@ public class PlaybackManager : INotifyPropertyChanged
     public bool IsLooping { get; private set; }
     public event EventHandler<TrackEventArgs>? TrackStopped;
     
-    public PlaybackManager(IAudioPlayer audioPlayer, Func<IEnumerable<PlaylistSong>> getAllSongsMethod)
+    public PlaybackManager(IAudioPlayer audioPlayer)
     {
         _player = audioPlayer;
-        _getAllSongsMethod = getAllSongsMethod;
         _player.TrackEnded += PlayerOnTrackEnded;
         RecentlyPlayed = new ObservableQueue<SongPlayed>(50, true);
         Queue = new ObservableQueue<PlaylistSong>();
@@ -58,8 +56,8 @@ public class PlaybackManager : INotifyPropertyChanged
     public void PlayFrom(PlaylistSong song, Playlist? playlist)
     {
         Stop();
-
-        var songs = playlist?.PlaylistItems.ToList() ?? _getAllSongsMethod.Invoke().ToList();
+        if (playlist == null) return;
+        var songs = playlist.PlaylistItems.ToList();
         if (!songs.Contains(song)) return;
 
         _playingPlaylist = playlist;
@@ -68,7 +66,7 @@ public class PlaybackManager : INotifyPropertyChanged
         RecreateTotalQueue(song);
         
         var curSong = TotalQueue.Peek();
-        CurrentSong = new SongPlayed(curSong, DateTime.UtcNow, playlist); 
+        CurrentSong = new SongPlayed(curSong.Song, DateTime.UtcNow, playlist);
         _player.Play(CurrentSong);
     }
 
@@ -92,7 +90,8 @@ public class PlaybackManager : INotifyPropertyChanged
         if (_playlistSource == null) return;
         if (_playlistSource.Count == 0 || CurrentSong == null)
             return;
-        int index = _playlistSource.IndexOf(CurrentSong) + 1;
+        //int index = _playlistSource.IndexOf(CurrentSong) + 1;
+        int index = _playlistSource.FindIndex(ps => ps.Song.Equals(CurrentSong.Song)) + 1;
         
         if (index >= _playlistSource.Count)
         {
@@ -125,7 +124,8 @@ public class PlaybackManager : INotifyPropertyChanged
         if (_playlistSource.Count == 0 || CurrentSong == null)
             return;
 
-        int index = _playlistSource.IndexOf(CurrentSong) - 1;
+        //int index = _playlistSource.IndexOf(CurrentSong) - 1;
+        int index = _playlistSource.FindIndex(ps => ps.Song.Equals(CurrentSong.Song)) - 1;
         if (index < 0)
         {
             if (IsLooping)
@@ -145,7 +145,8 @@ public class PlaybackManager : INotifyPropertyChanged
         IsLooping = !IsLooping;
         if (CurrentSong == null) return;
         if (_playlistSource == null) return;
-        var startIndex = _playlistSource.IndexOf(CurrentSong);
+        //var startIndex = _playlistSource.IndexOf(CurrentSong);
+        int startIndex = _playlistSource.FindIndex(ps => ps.Song.Equals(CurrentSong.Song));
         for (var index = 0; index < _playlistSource.Count; index++)
         {
             if (IsLooping)
@@ -183,7 +184,7 @@ public class PlaybackManager : INotifyPropertyChanged
     // TODO: Look into why natural end of last song of ghost playlist doesnt switch to no selected song
     public void OnPlaylistRemoved(object? sender, PlaylistEventArgs e)
     {
-        if (!e.Playlist?.Equals(_playingPlaylist) ?? false) return;
+        if (!e.Playlist.Equals(_playingPlaylist)) return;
         
         _playingPlaylist = null;
     }

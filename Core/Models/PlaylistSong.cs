@@ -4,35 +4,19 @@ namespace Riffle.Core.Models;
 
 public class PlaylistSong
 {
-    private Playlist _playlist = null!;
+    public Playlist Playlist { get; private set; } = null!;
 
-    public Playlist Playlist
-    {
-        get => _playlist;
-        private set
-        {
-            _playlist = value;
-            PlaylistId = value.Id;
-        }
-    }
     public Guid PlaylistId { get; private set; }
 
-    private Song _song = null!;
-    public Song Song
-    {
-        get => _song;
-        private set
-        {
-            _song = value;
-            SongId = value.Id;
-        }
-    }
+    public Song Song { get; private set; } = null!;
 
     public Guid SongId { get; private set; }
 
     public DateTime DateAdded { get; private set; }
 
     public string HowLongAgo => DateAdded.ToFriendlyAge();
+    
+    public Guid Id { get; private set; }
 
     public PlaylistSong()
     {
@@ -42,8 +26,11 @@ public class PlaylistSong
     public PlaylistSong(Song song, Playlist playlist)
     {
         Song = song;
+        SongId = song.Id;
         Playlist = playlist;
+        PlaylistId = playlist.Id;
         DateAdded = DateTime.UtcNow;
+        Id = Guid.NewGuid();
     }
 
     public override bool Equals(object? obj)
@@ -55,6 +42,6 @@ public class PlaylistSong
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(SongId, PlaylistId);
+        return PlaylistId.GetHashCode();
     }
 }

@@ -12,7 +12,12 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
     {
         if (values.Length != 2) return false;
         
-        if (values[0] is PlaylistViewModel openPlaylist
+        if (values[0] is Guid id1 && values[1] is Guid id2)
+            return id1 == id2;
+
+        return false;
+        
+        /*if (values[0] is PlaylistViewModel openPlaylist
             && values[1] is PlaylistViewModel playingPlaylist)
         {
             return Equals(openPlaylist, playingPlaylist);
@@ -22,7 +27,7 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
             && values[1] is PlaylistSong currentSong)
         {
             return Equals(thisRowSong, currentSong);
-        }
+        }*/
 
         /*if (values.Length == 4)
         {

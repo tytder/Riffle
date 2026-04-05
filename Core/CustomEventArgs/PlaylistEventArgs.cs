@@ -4,9 +4,9 @@ namespace Riffle.Core.CustomEventArgs;
 
 public class PlaylistEventArgs : EventArgs
 {
-    public Playlist? Playlist { get; }
+    public Playlist Playlist { get; }
 
-    public PlaylistEventArgs(Playlist? playlist)
+    public PlaylistEventArgs(Playlist playlist)
     {
         Playlist = playlist;
     }

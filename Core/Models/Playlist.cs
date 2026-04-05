@@ -4,20 +4,31 @@ namespace Riffle.Core.Models;
 
 public class Playlist
 {
+    public Playlist()
+    {
+        
+    }
+ 
     public Playlist(string name)
     {
         Name = name;
+        Id = Guid.NewGuid();
+        LastPlayed = DateTime.UtcNow;
     }
+
 
     public Playlist(string name, bool isAllSongs)
     {
         Name = name;
         IsAllSongs = isAllSongs;
+        Id = Guid.NewGuid();
+        LastPlayed = DateTime.UtcNow;
     }
 
     public string Name { get; private set; }
-    public Guid Id { get; } = Guid.NewGuid();
+    public Guid Id { get; private set; }
     public bool IsAllSongs { get; private set; }
+    public DateTime LastPlayed { get; private set; }
 
     public ICollection<PlaylistSong> PlaylistItems{ get; private set; }
         = new ObservableCollection<PlaylistSong>();

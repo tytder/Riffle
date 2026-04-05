@@ -37,12 +37,12 @@ internal class MusicService
         return playlistSong;
     }
     
-    public List<PlaylistSong> GetSongsForPlaylist(Playlist playlist)
+    public List<PlaylistSong> GetSongsForPlaylist(Guid playlistId)
     {
         var dbPlaylist = _db.Playlists
             .Include(p => p.PlaylistItems)
                 .ThenInclude(ps => ps.Song)
-            .First(p => p.Id == playlist.Id);
+            .First(p => p.Id == playlistId);
 
         return dbPlaylist.PlaylistItems.ToList();
     }
@@ -74,16 +74,30 @@ internal class MusicService
             .ToList();
     }
 
-    public void DeletePlaylist(Playlist playlist)
+    public void DeletePlaylist(Guid playlistId)
     {
-        var dbPlaylist = _db.Playlists.Include(p => p.PlaylistItems).FirstOrDefault(p => p.Id == playlist.Id);
-        if (dbPlaylist != null)
+        var dbPlaylist = _db.Playlists
+            .Include(p => p.PlaylistItems)
+            .FirstOrDefault(p => p.Id == playlistId);
+
+        if (dbPlaylist == null) return;
+
+        // mark history entries
+        var history = _db.SongHistory // whatever DbSet<SongPlayed> is called
+            .Where(h => h.PlayedFromId == dbPlaylist.Id)
+            .ToList();
+
+        foreach (var h in history)
         {
-            // Option 1: If join table uses explicit entity, remove its rows first.
-            // Option 2: If implicit many-to-many, remove relationships:
-            dbPlaylist.PlaylistItems.Clear();
-            _db.Playlists.Remove(dbPlaylist);
-            _db.SaveChanges();
+            if (h.PlayedFromName != null &&
+                !h.PlayedFromName.EndsWith(" (deleted)", StringComparison.Ordinal))
+            {
+                h.PlayedFromName += " (deleted)";
+            }
         }
+
+        dbPlaylist.PlaylistItems.Clear();
+        _db.Playlists.Remove(dbPlaylist);
+        _db.SaveChanges();
     }
 }
