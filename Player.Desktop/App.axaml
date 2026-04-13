@@ -1,0 +1,21 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Player.Desktop.App"
+             xmlns:local="using:Player.Desktop"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+  
+    <Application.Resources>
+            
+        <!-- Default -->
+        <SolidColorBrush x:Key="ForegroundDefault">Black</SolidColorBrush>
+    
+        <!-- Playing -->
+        <SolidColorBrush x:Key="ForegroundPlaying">Green</SolidColorBrush>
+        
+    </Application.Resources>
+</Application>

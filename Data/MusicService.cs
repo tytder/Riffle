@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Riffle.Core.Models;
-using Riffle.Data;
 
-namespace Riffle.Player.Windows.Services;
+namespace Riffle.Data;
 
 #nullable enable
 internal class MusicService

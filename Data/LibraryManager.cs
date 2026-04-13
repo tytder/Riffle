@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Riffle.Core.Models;
-using Riffle.Player.Windows.Services;
 
 namespace Riffle.Data;
 
@@ -9,6 +8,7 @@ public class LibraryManager : ILibraryManager
     private readonly MusicDbContext _db;
     private readonly MusicService _musicService;
     public Guid AllSongsPlaylistId { get; private set; }
+    public bool IsInitialized { get; private set; }
 
     public LibraryManager(MusicDbContext db)
     {
@@ -18,7 +18,9 @@ public class LibraryManager : ILibraryManager
 
     public async void Initialize()
     {
+        if (IsInitialized) return;
         await EnsureAllSongsPlaylistAsync();
+        IsInitialized = true;
     }
 
     public PlaylistSong AddNewSongToPlaylist(Song newSong, Guid playlistToAddId)
@@ -104,19 +106,4 @@ public class LibraryManager : ILibraryManager
         AllSongsPlaylistId = playlist.Id;
         return playlist;
     }
-}
-
-public interface ILibraryManager
-{
-    Guid AllSongsPlaylistId { get; }
-    void Initialize();
-    Task<Playlist> EnsureAllSongsPlaylistAsync();
-    PlaylistSong AddNewSongToPlaylist(Song newSong, Guid playlistToAddId);
-    PlaylistSong AddExistingSongToPlaylist(Guid songId, Guid playlistToAddId);
-    IEnumerable<PlaylistSong> GetSongsForPlaylist(Guid playlistId);
-    IEnumerable<PlaylistSong> GetAllSongsPlaylist();
-    IEnumerable<Playlist> GetAllPlaylists();
-    Playlist CreatePlaylist(string playlistWindowPlaylistName);
-    void DeletePlaylist(Guid playlistId);
-    void MarkLastPlayedPlaylist(Guid playlistId);
 }
