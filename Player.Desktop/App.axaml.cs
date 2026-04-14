@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -26,9 +27,13 @@ public partial class App : Application
     {
         // --- DI SETUP ---
         var services = new ServiceCollection();
+        
+        Directory.CreateDirectory(
+            Path.GetDirectoryName(MusicDbContext.DbPath)!
+        );
 
         services.AddDbContext<MusicDbContext>(options =>
-            options.UseSqlite("Data Source=music.db"));
+            options.UseSqlite($"Data Source={MusicDbContext.DbPath}"));
 
         services.AddSingleton<ILibraryManager, LibraryManager>();
         services.AddSingleton<VlcAudioPlayer>(); // switched player

@@ -47,7 +47,7 @@ public partial class App : Application
     
         // Db options first
         services.AddDbContext<MusicDbContext>(options =>
-            options.UseSqlite("Data Source=music.db"));
+            options.UseSqlite($"Data Source={MusicDbContext.DbPath}"));
 
         services.AddSingleton<ILibraryManager, LibraryManager>();
         services.AddSingleton<NAudioAudioPlayer>(); 

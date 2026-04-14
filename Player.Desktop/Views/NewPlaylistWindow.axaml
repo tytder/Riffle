@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Height="120" Width="250"
+        x:Class="Player.Desktop.Views.NewPlaylistWindow"
+        Background="White"
+        Title="NewPlaylist">
+    <StackPanel Margin="10">
+        <TextBlock Text="Playlist name:"/>
+        <TextBox 
+            x:Name="TxtPlaylistName" 
+            Margin="0,5" 
+            Text="New Playlist" 
+            BorderThickness="1"
+            BorderBrush="Black"/>
+
+        
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button HorizontalContentAlignment="Center" Content="OK" Width="60" Margin="5,0,5,5" Click="OnOkClick"/>
+            <Button HorizontalContentAlignment="Center" Content="Cancel" Width="80" Margin="5,0,5,5" Click="OnCancelClick"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

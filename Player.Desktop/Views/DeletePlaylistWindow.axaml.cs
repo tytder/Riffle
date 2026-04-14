@@ -1,8 +1,9 @@
-using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
 
-namespace Player.Desktop;
+namespace Player.Desktop.Views;
 
 public partial class DeletePlaylistWindow : Window
 {

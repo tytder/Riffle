@@ -6,7 +6,7 @@ namespace Riffle.Data;
 
 public class MusicDbContext : DbContext
 {
-    public static string AppName = Assembly.GetEntryAssembly()!.GetName().Name!;
+    public const string AppName = "RifflePlayer";
     
     public static string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

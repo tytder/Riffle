@@ -30,4 +30,11 @@
       <ProjectReference Include="..\Core\Core.csproj" />
       <ProjectReference Include="..\Data\Data.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Views\SongImportData.axaml.cs">
+        <DependentUpon>SongImportData.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+    </ItemGroup>
 </Project>

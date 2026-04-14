@@ -9,11 +9,8 @@ public class Playlist
         
     }
  
-    public Playlist(string name)
+    public Playlist(string name) : this (name, false)
     {
-        Name = name;
-        Id = Guid.NewGuid();
-        LastPlayed = DateTime.UtcNow;
     }
 
 
@@ -21,7 +18,6 @@ public class Playlist
     {
         Name = name;
         IsAllSongs = isAllSongs;
-        Id = Guid.NewGuid();
         LastPlayed = DateTime.UtcNow;
     }
 

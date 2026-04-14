@@ -16,7 +16,6 @@ public class Song
         Artist = artist;
         Duration = duration;
         FilePath = filePath;
-        Id = Guid.NewGuid();
     }
 
     public string Title { get; private set; }

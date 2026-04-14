@@ -30,7 +30,6 @@ public class PlaylistSong
         Playlist = playlist;
         PlaylistId = playlist.Id;
         DateAdded = DateTime.UtcNow;
-        Id = Guid.NewGuid();
     }
 
     public override bool Equals(object? obj)

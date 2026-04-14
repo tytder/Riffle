@@ -1,21 +1,26 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Player.Desktop.Models;
 using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Models;
 using Riffle.Core.Utilities;
 using Player.Desktop.ViewModels;
+using Player.Desktop.Views;
 using Riffle.Core.Interfaces;
 using Riffle.Core.Services;
+using Riffle.Data;
 using TagLib;
+using File = TagLib.File;
 
 namespace Player.Desktop;
 
@@ -35,9 +40,8 @@ public partial class MainWindow : Window
 
     public MainWindowViewModel ViewModel { get; }
 
-    private bool _isTeleportingSeekBarThumb;
+    private bool _isDraggingBar;
     private bool _seekBarWasRecentlyAutoUpdated;
-    private bool _isDraggingSeekBar;
 
     public MainWindow()
     {
@@ -50,6 +54,8 @@ public partial class MainWindow : Window
         ViewModel = new DesignerMainWindowViewModel();
 
         PlaylistList.SelectedIndex = 0;
+        PlaylistList.ItemsSource = ViewModel.SidebarViewModel.Playlists;
+        ViewModel.SidebarViewModel.RefreshPlaylists();
         DataContext = ViewModel;
 
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
@@ -58,9 +64,6 @@ public partial class MainWindow : Window
 
         _player.TrackLoaded += Player_TrackLoaded;
         _player.StopAllCalled += OnStopCalled;
-
-        // Avalonia uses Opened instead of WPF's Loaded for the window.
-        Opened += OnOpened;
 
         var buttonInactiveColor = Color.FromRgb(80, 80, 80);
         _buttonInactiveBrush = new SolidColorBrush(buttonInactiveColor);
@@ -90,10 +93,7 @@ public partial class MainWindow : Window
 
         _player.TrackLoaded += Player_TrackLoaded;
         _player.StopAllCalled += OnStopCalled;
-
-        // Avalonia uses Opened instead of WPF's Loaded for the window.
-        Opened += OnOpened;
-
+        
         var buttonInactiveColor = Color.FromRgb(80, 80, 80);
         _buttonInactiveBrush = new SolidColorBrush(buttonInactiveColor);
         _buttonActiveBrush = new SolidColorBrush(Colors.White);
@@ -112,13 +112,6 @@ public partial class MainWindow : Window
     {
         base.OnClosed(e);
         _player.Dispose();
-    }
-
-    private void OnOpened(object? sender, EventArgs e)
-    {
-        // In Avalonia the Slider template is available at this point;
-        // we can hook pointer events directly (XAML already wires Move/Released).
-        SeekBar.PointerPressed += SeekBar_PointerPressed;
     }
 
     private void Minimize_Click(object? sender, RoutedEventArgs e)
@@ -147,53 +140,16 @@ public partial class MainWindow : Window
         }
     }
 
-    // Seek bar pointer logic (equivalent to your WPF PreviewMouse* handlers)
-
-    private void SeekBar_PointerPressed(object? sender, PointerPressedEventArgs e)
+    private void SeekBar_PointerReleased(object? sender, PointerCaptureLostEventArgs pointerCaptureLostEventArgs)
     {
-        if (sender is not Slider slider)
-            return;
-
-        var pos = e.GetPosition(slider);
-        if (slider.Bounds.Width <= 0)
-            return;
-
-        var ratio = pos.X / slider.Bounds.Width;
-        slider.Value = slider.Minimum + (slider.Maximum - slider.Minimum) * ratio;
-
-        _isDraggingSeekBar = true;
-        e.Pointer.Capture(slider);
-        e.Handled = true;
-    }
-
-    private void SeekBar_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (!_isDraggingSeekBar)
-            return;
-
-        if (sender is not Slider slider)
-            return;
-
-        var pos = e.GetPosition(slider);
-        if (slider.Bounds.Width <= 0)
-            return;
-
-        var ratio = pos.X / slider.Bounds.Width;
-        slider.Value = slider.Minimum + (slider.Maximum - slider.Minimum) * ratio;
-
-        if (_player.HasTrackLoaded)
-            TxtCurrentTime.Text = slider.Value.ToMmSs();
-    }
-
-    private void SeekBar_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (!_isDraggingSeekBar)
+        /*if (!_isDraggingSeekBar)
             return;
 
         _isDraggingSeekBar = false;
-        _isTeleportingSeekBarThumb = false;
         e.Pointer.Capture(null);
+        */
 
+        _isDraggingBar = false;
         _player.Seek(TimeSpan.FromSeconds(SeekBar.Value));
     }
 
@@ -204,7 +160,7 @@ public partial class MainWindow : Window
         SeekBar.Value = 0;
         TxtSongTitle.Text = e.Song.Title;
         TxtArtistName.Text = e.Song.Artist;
-        _isTeleportingSeekBarThumb = false;
+        _isDraggingBar = false;
 
         QueueListView.ItemsSource = ViewModel.TotalQueue;
         RecentlyPlayedListView.ItemsSource = ViewModel.RecentlyPlayed;
@@ -214,9 +170,9 @@ public partial class MainWindow : Window
     {
         if (!_player.HasTrackLoaded)
             return;
-        if (_isDraggingSeekBar || _isTeleportingSeekBarThumb)
+        if (_isDraggingBar)
             return;
-
+        
         _seekBarWasRecentlyAutoUpdated = true;
         SeekBar.Value = _player.CurrentTime.TotalSeconds;
         TxtCurrentTime.Text = SeekBar.Value.ToMmSs();
@@ -274,13 +230,26 @@ public partial class MainWindow : Window
     // Depending on Avalonia version, you might need to change the event type to a concrete ValueChanged args.
     private void SeekBar_ValueChanged(object? sender, RoutedEventArgs e)
     {
-        if (!_seekBarWasRecentlyAutoUpdated && !_isDraggingSeekBar)
+        if (!_seekBarWasRecentlyAutoUpdated)
         {
-            _isTeleportingSeekBarThumb = true;
+            _isDraggingBar = true;
         }
 
+        //double totalSeconds;
         if (_player.HasTrackLoaded)
-            TxtCurrentTime.Text = _player.CurrentTime.TotalSeconds.ToMmSs();
+            TxtCurrentTime.Text = SeekBar.Value.ToMmSs();
+            /*
+        {
+            if (!_isDraggingBar)
+            {
+                totalSeconds = _player.CurrentTime.TotalSeconds;
+            }
+            else
+            {
+                totalSeconds = SeekBar.Maximum;
+            }
+        }
+            */
 
         _seekBarWasRecentlyAutoUpdated = false;
     }
@@ -293,6 +262,11 @@ public partial class MainWindow : Window
         _player.SetVolume((float)VolumeBar.Value / 100);
         TxtVolumePercentage.Text = (int)VolumeBar.Value + "%";
     }
+    
+    public static FilePickerFileType AudioAll { get; } = new("Audio files")
+    {
+        Patterns = new[] { "*.mp3", "*.wav", "*.m4a", "*.flac", "*.opus", "*.ogg" },
+    };
 
     // Import songs – converted to Avalonia's OpenFileDialog (async)
     private async void BtnImportSong_OnClick(object? sender, RoutedEventArgs e)
@@ -307,32 +281,27 @@ public partial class MainWindow : Window
                          - PlaylistContent.Padding.Left
                          - PlaylistContent.Padding.Right;
 
-        var dialog = new OpenFileDialog
-        {
-            Filters =
+        var files = await StorageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions()
             {
-                new FileDialogFilter
-                {
-                    Name = "Audio files",
-                    Extensions = { "mp3", "wav" }
-                }
-            },
-            AllowMultiple = true
-        };
+                AllowMultiple = true,
+                FileTypeFilter = [AudioAll],
+            });
 
-        var files = await dialog.ShowAsync(this);
-        if (files is null || files.Length == 0)
+        if (files is null || files.Count == 0)
             return;
 
         foreach (var file in files)
         {
-            ShowSongMetadataDialog(file);
+            var uri = file.Path.LocalPath;
+            ShowSongMetadataDialog(uri);
         }
     }
 
-    private void ShowSongMetadataDialog(string filePath)
+    private async void ShowSongMetadataDialog(string filePath)
     {
-        var tagFile = TagLib.File.Create(filePath);
+        var file = new File.LocalFileAbstraction(filePath);
+        var tagFile = TagLib.File.Create(file);
 
         var suggestedTitle = !string.IsNullOrEmpty(tagFile.Tag.Title)
             ? tagFile.Tag.Title
@@ -342,20 +311,20 @@ public partial class MainWindow : Window
             ? tagFile.Tag.Performers[0]
             : string.Empty;
 
-        /*var metadataWindow = new SongImport
+        var metadataWindow = new SongImportData()
         {
             FilePath = System.IO.Path.GetFileName(filePath),
             TxtSongTitle = { Text = suggestedTitle },
             TxtArtistName = { Text = suggestedArtist }
         };
 
-        var result = metadataWindow.ShowDialog<bool?>(this).GetAwaiter().GetResult();
+        var result = await metadataWindow.ShowDialog<bool?>(this);
         if (result != true)
             return;
 
         var title = metadataWindow.SongTitle;
         var artist = metadataWindow.ArtistName;
-        */
+        
         var duration = tagFile.Properties.Duration;
 
         if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
@@ -363,7 +332,7 @@ public partial class MainWindow : Window
 
         var playlist = selectedVm.Playlist;
 
-        var newSong = new Song(suggestedTitle, suggestedArtist, duration, filePath);
+        var newSong = new Song(title, artist, duration, filePath);
         var newPlaylistSong = ViewModel.AddSong(newSong, playlist);
 
         if (_player.IsPlaying)
@@ -468,10 +437,14 @@ public partial class MainWindow : Window
         ViewModel.PlayFrom(selectedVm);
     }
 
-    private void AddPlaylist_Click(object? sender, RoutedEventArgs e)
+    private async void AddPlaylist_Click(object? sender, RoutedEventArgs e)
     {
         var playlistWindow = new NewPlaylistWindow();
-
+        var result = await playlistWindow.ShowDialog<bool>(this);
+        if (result)
+        {
+            PlaylistList.SelectedItem = ViewModel.CreatePlaylist(playlistWindow.PlaylistName);
+        }
         /*playlistWindow.ShowDialog<bool?>(this).ContinueWith(t =>
         {
             if (t.Result == true)
@@ -484,7 +457,7 @@ public partial class MainWindow : Window
         });*/
     }
 
-    private void RemovePlaylist_Click(object? sender, RoutedEventArgs e)
+    private async void RemovePlaylist_Click(object? sender, RoutedEventArgs e)
     {
         if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
             return;
@@ -496,8 +469,14 @@ public partial class MainWindow : Window
         {
             WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
-
-        deletePlaylistWindow.ShowDialog<bool?>(this).ContinueWith(t =>
+        
+        var result = await deletePlaylistWindow.ShowDialog<bool>(this);
+        if (result)
+        {
+            ViewModel.DeletePlaylist(selectedVm);
+            ViewModel.SelectedPlaylist = ViewModel.GetAllSongsPlaylist();
+        }
+        /*deletePlaylistWindow.ShowDialog<bool?>(this).ContinueWith(t =>
         {
             if (t.Result == true)
             {
@@ -507,7 +486,7 @@ public partial class MainWindow : Window
                     ViewModel.SelectedPlaylist = ViewModel.GetAllSongsPlaylist();
                 });
             }
-        });
+        });*/
     }
 
     private void Queue_OnClick(object? sender, RoutedEventArgs e)

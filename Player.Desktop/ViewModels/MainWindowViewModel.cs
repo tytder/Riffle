@@ -149,6 +149,7 @@ public class MainWindowViewModel : ViewModelBase
         // GetAllSongs already handles if there is no AllSongs playlist so we can ignore the null warning
         Playlist playlist = selectedPlaylistViewModel.Playlist;
         songToPlay ??= GetFirstSong(selectedPlaylistViewModel.Playlist);
+        if (songToPlay == null) return;
 
         // Update "currently playing" state in the MainWindowViewModel
         CurrentPlaylistPlaying = selectedPlaylistViewModel;
@@ -157,10 +158,11 @@ public class MainWindowViewModel : ViewModelBase
         _playbackManager.PlayFrom(songToPlay, playlist);
     }
 
-    private PlaylistSong GetFirstSong(Playlist selectPlaylist)
+    private PlaylistSong? GetFirstSong(Playlist selectPlaylist)
     {
         var playlist
             = selectPlaylist.PlaylistItems.ToArray();
+        if (playlist.Length <= 0) return null;
         return playlist[0]; // TODO: take into account shuffle logic
     }
 
