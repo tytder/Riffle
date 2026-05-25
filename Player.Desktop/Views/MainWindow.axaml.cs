@@ -442,14 +442,6 @@ public partial class MainWindow : Window
         OpenPlaylist(selectedVm);
     }
 
-    private void OpenPlaylist(PlaylistViewModel selectedVm)
-    {
-        ViewModel.SongsViewModel.LoadSongs(selectedVm);
-        SetPlaylistHeaderPlaying(_player.IsPlaying, selectedVm);
-        PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
-        PlaylistList.SelectedItem = selectedVm;
-    }
-
     private void PlaylistList_OnMouseDoubleClick(object? sender, RoutedEventArgs e)
     {
         if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
