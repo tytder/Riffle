@@ -6,7 +6,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Avalonia.Controls;
-using Player.Commands;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Player.Desktop.Models;
 using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Interfaces;
@@ -14,14 +15,16 @@ using Riffle.Core.Models;
 using Riffle.Core.Services;
 using Riffle.Core.Utilities;
 using Riffle.Data;
+using RelayCommand = Player.Commands.RelayCommand;
 
 namespace Player.Desktop.ViewModels;
 #nullable enable
-public class MainWindowViewModel : ViewModelBase
+public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly PlaybackManager _playbackManager;
     protected PlaybackManager PlaybackManager => _playbackManager;
     private readonly ILibraryManager _libraryManager;
+    private readonly IAudioPlayer _player;
 
     public SidebarViewModel SidebarViewModel { get; }
     public SongsViewModel SongsViewModel { get; }
@@ -37,6 +40,7 @@ public class MainWindowViewModel : ViewModelBase
             {
                 _selectedPlaylist = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedPlaylistInfo));
                 SongsViewModel.LoadSongs(value);
             }
         }
@@ -81,30 +85,15 @@ public class MainWindowViewModel : ViewModelBase
     public List<PlaylistSong> Queue => _playbackManager.Queue;
     public bool IsQueueVisible => Queue.Count > 0; // TODO: figure out how to update this.
     
+    [ObservableProperty]
     private bool _isQueueWindowOpen;
 
-    public bool IsQueueWindowOpen
-    {
-        get => _isQueueWindowOpen;
-        set
-        {
-            if (!Equals(_isQueueWindowOpen, value))
-            {
-                _isQueueWindowOpen = value;
-                OnPropertyChanged();
-            }
-        }
-    }
     public ObservableQueue<SongPlayed> RecentlyPlayed => _playbackManager.RecentlyPlayed;
     public bool IsLooping => _playbackManager.IsLooping;
-    public RelayCommand AddToQueueCommand { get; }
 
-    private bool _isPlaylistsPanelExpanded;
-    public bool IsPlaylistsPanelExpanded
-    {
-        get => _isPlaylistsPanelExpanded;
-        set => _isPlaylistsPanelExpanded = value;
-    }
+    [ObservableProperty]
+    private bool _isPlaylistsPanelExpanded = true;
+
 
     public event EventHandler<PlaylistEventArgs>? PlaylistRemoved;
 
@@ -130,11 +119,13 @@ public class MainWindowViewModel : ViewModelBase
         SongsViewModel = songsVm;
         //SongsViewModel = new SongsViewModel(musicService);
         SelectedPlaylist = SidebarViewModel.Playlists[0];
+
+        _player = player;
+        
         _playbackManager = playbackManager;
         _playbackManager.PropertyChanged += PlaybackPropertyChanged;
         _playbackManager.QueueCollectionChanged += PlaybackQueueChanged;
         PlaylistRemoved += _playbackManager.OnPlaylistRemoved;
-        AddToQueueCommand = new RelayCommand(AddToQueue);
     }
 
     ~MainWindowViewModel()
@@ -153,12 +144,20 @@ public class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsQueueVisible));
     }
 
+    [RelayCommand]
     private void AddToQueue(object? selectedItem)
     {
         if (selectedItem is not PlaylistSong playlistSong) return;
         
         _playbackManager.AddToUserQueue(playlistSong);
     }
+    
+    [RelayCommand]
+    private void TogglePlaylistsPanel() => IsPlaylistsPanelExpanded = !IsPlaylistsPanelExpanded;
+    
+    [RelayCommand]
+    private void ToggleQueuePanel() => IsQueueWindowOpen = !IsQueueWindowOpen;
+    
 
     public void ToggleLoop()
     {
@@ -266,8 +265,30 @@ public class MainWindowViewModel : ViewModelBase
         return playlistViewModel;
     }
 
-    public void OpenPlaylist(PlaylistViewModel selectedVm)
+    public void OpenPlaylist(PlaylistViewModel? selectedVm = null)
     {
-        
+        selectedVm ??= CurrentPlaylistPlaying;
+        selectedVm ??= SelectedPlaylist;
+        SongsViewModel.LoadSongs(selectedVm);
+        SetPlaylistHeaderPlaying(_player.IsPlaying, selectedVm);
+        SelectedPlaylist = selectedVm;
+    }
+    
+    public void SetPlaylistHeaderPlaying(bool isPlaying, PlaylistViewModel? playlistViewModel = null)
+    {
+        playlistViewModel ??= SelectedPlaylist;
+
+        if (isPlaying && Equals(CurrentPlaylistPlaying, playlistViewModel))
+        {
+            /*PlaylistPlayBtn.Content = "⏸";
+            PlaylistPlayBtn.Padding = new Thickness(-2, -2, -2, -0);
+            PlaylistPlayBtn.FontSize = 18;*/
+        }
+        else
+        {
+            /*PlaylistPlayBtn.Content = "▶";
+            PlaylistPlayBtn.Padding = new Thickness(5, -1, 5, 0);
+            PlaylistPlayBtn.FontSize = 12;*/
+        }
     }
 }

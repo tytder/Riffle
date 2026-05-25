@@ -12,7 +12,8 @@
         x:Class="Player.Desktop.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         ExtendClientAreaToDecorationsHint="True"
-        SystemDecorations="BorderOnly"
+        SystemDecorations="Full"
+        ExtendClientAreaTitleBarHeightHint="0"
         Icon="/Assets/avalonia-logo.ico"
         Height="600"
         Width="900"
@@ -121,93 +122,16 @@
             </Grid.ColumnDefinitions>
 
             <!-- Playlists -->
-            <StackPanel Grid.Column="0">
-                <StackPanel
-                    Orientation="Horizontal"
-                    Margin="10,2,10,5">
-                    <TextBlock Margin="30,0,5,0" FontSize="24">Playlists</TextBlock>
-                    <Button 
-                        Margin="2,0"
-                        Click="AddPlaylist_Click"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Width="25"
-                        Height="25"
-                        FontSize="15"
-                        Background="Gray"
-                        Foreground="White"
-                        Padding="-2,-3.3, -2 , -0.5"
-                        Content="+"/>
-                    <Button 
-                        Margin="2,0"
-                        Click="RemovePlaylist_Click"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Width="25"
-                        Height="25"
-                        FontSize="15"
-                        Padding="-2,-3.3, -2 , -0.5"
-                        Background="Gray"
-                        Foreground="White">
-                        -
-                    </Button>
-                </StackPanel>
-                <ListBox x:Name="PlaylistList"
-                         ItemsSource="{Binding SidebarViewModel.Playlists}"
-                         SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}"
-                         SelectionChanged="PlaylistList_OnSelected"
-                         DoubleTapped="PlaylistList_OnMouseDoubleClick"
-                         SizeChanged="PlaylistList_OnSizeChanged">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border>
-                            <Border.Tag>
-                                <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                    <Binding Path="."/>
-                                    <Binding Path="$parent[Window].((vm:MainWindowViewModel)DataContext).CurrentPlaylistPlaying"/>
-                                </MultiBinding>
-                            </Border.Tag>
-                            <Border BorderBrush="Black" BorderThickness="1" 
-                                    CornerRadius="4" Padding="4">
-                                <TextBlock Text="{Binding Playlist.Name}"/>
-                            </Border>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-                <ListBox.ItemContainerTheme>
-                    <ControlTheme TargetType="ListBoxItem">
-        
-                        <!-- DEFAULT STYLE -->
-                        <Style Selector="^">
-                            <Setter Property="Foreground" Value="{DynamicResource ForegroundDefault}"/>
-                        </Style>
-
-                        <!-- PLAYING STYLE -->
-                        <Style Selector="^[Tag=true]">
-                            <Setter Property="Foreground" Value="{DynamicResource ForegroundPlaying}"/>
-                            <Setter Property="FontWeight" Value="Bold"/>
-                        </Style>
-
-                    </ControlTheme>
-                </ListBox.ItemContainerTheme>
-
-                <!--<ListBox.View>
-                    <GridView x:Name="PlaylistView">
-                        <GridViewColumn Width="200" DisplayMemberBinding="{Binding Name}">
-                            <GridViewColumn.Header>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
-                                    <TextBlock Text="Playlists" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                    <Button Content="+" Width="20" Height="20" Margin="0,0,2,0"
-                                            Click="AddPlaylist_Click"/>
-                                    <Button Content="−" Width="20" Height="20"
-                                            Click="RemovePlaylist_Click"/>
-                                </StackPanel>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                    </GridView>
-                </ListBox.View>-->
-                </ListBox>
-            </StackPanel>
+            <SplitView Grid.Column="0"
+                       DisplayMode="CompactInline"
+                       PanePlacement="Left"
+                       IsPaneOpen="{Binding IsPlaylistsPanelExpanded}"
+                       OpenPaneLength="270"
+                       CompactPaneLength="32">
+                <SplitView.Pane>
+                    <views:PlaylistsPanel DataContext="{Binding}"/>
+                </SplitView.Pane>
+            </SplitView>
                 
 
             <!-- Songs -->
@@ -221,7 +145,7 @@
                             <TextBlock Text="{Binding SelectedPlaylist.Name}" 
                                        FontSize="56" FontWeight="Bold" Foreground="White"/>
                             <TextBlock x:Name="PlaylistInfo"
-                                        Text="0 songs, 0 hr 0 min"
+                                        Text="{Binding SelectedPlaylistInfo}"
                                         FontSize="14" Foreground="LightGray"/>
                             <Grid Margin="0,5,0,0">
                                 <Grid.ColumnDefinitions>

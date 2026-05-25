@@ -75,7 +75,7 @@ public partial class App : Application
 
             desktop.MainWindow = new MainWindow(mainVm, player, playbackMan);
         }
-
+        
         base.OnFrameworkInitializationCompleted();
     }
 }

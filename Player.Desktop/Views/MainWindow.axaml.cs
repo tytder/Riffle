@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Chrome;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -42,8 +43,6 @@ public partial class MainWindow : Window
     };
 
     public MainWindowViewModel ViewModel { get; }
-    // TODO: 2-way binding!!!
-    public PlaylistViewModel? SelectedPlaylistVm { get; set; }
 
     private bool _isDraggingBar;
     private bool _seekBarWasRecentlyAutoUpdated;
@@ -59,8 +58,6 @@ public partial class MainWindow : Window
         _player.PlayingStateChanged += PlayerOnPlayingStateChanged;
         ViewModel = new DesignerMainWindowViewModel();
 
-        PlaylistList.SelectedIndex = 0;
-        PlaylistList.ItemsSource = ViewModel.SidebarViewModel.Playlists;
         ViewModel.SidebarViewModel.RefreshPlaylists();
         DataContext = ViewModel;
 
@@ -94,7 +91,6 @@ public partial class MainWindow : Window
         _player.PlayingStateChanged += PlayerOnPlayingStateChanged;
         ViewModel = vm;
 
-        PlaylistList.SelectedIndex = 0;
         DataContext = ViewModel;
         PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
 
@@ -232,25 +228,7 @@ public partial class MainWindow : Window
     private void SetPauseResume(bool isPlaying)
     {
         SetControlBarPlaying(isPlaying);
-        SetPlaylistHeaderPlaying(isPlaying);
-    }
-
-    private void SetPlaylistHeaderPlaying(bool isPlaying, PlaylistViewModel? playlistViewModel = null)
-    {
-        playlistViewModel ??= PlaylistList.SelectedItem as PlaylistViewModel;
-
-        if (isPlaying && Equals(ViewModel.CurrentPlaylistPlaying, playlistViewModel))
-        {
-            PlaylistPlayBtn.Content = "⏸";
-            PlaylistPlayBtn.Padding = new Thickness(-2, -2, -2, -0);
-            PlaylistPlayBtn.FontSize = 18;
-        }
-        else
-        {
-            PlaylistPlayBtn.Content = "▶";
-            PlaylistPlayBtn.Padding = new Thickness(5, -1, 5, 0);
-            PlaylistPlayBtn.FontSize = 12;
-        }
+        ViewModel.SetPlaylistHeaderPlaying(isPlaying);
     }
 
     private void SetControlBarPlaying(bool isPlaying)
@@ -347,11 +325,8 @@ public partial class MainWindow : Window
         var artist = metadataWindow.ArtistName;
         
         var duration = tagFile.Properties.Duration;
-
-        if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
-            return;
-
-        var playlist = selectedVm.Playlist;
+        
+        var playlist = ViewModel.SelectedPlaylist.Playlist;
 
         var newSong = new Song(title, artist, duration, filePath);
         var newPlaylistSong = ViewModel.AddSong(newSong, playlist);
@@ -359,7 +334,7 @@ public partial class MainWindow : Window
         if (_player.IsPlaying)
             return;
 
-        ViewModel.PlayFrom(selectedVm, newPlaylistSong);
+        ViewModel.PlayFrom(ViewModel.SelectedPlaylist, newPlaylistSong);
     }
 
 
@@ -417,90 +392,7 @@ public partial class MainWindow : Window
         if (PlaylistContent.SelectedItem is not PlaylistSong selectedSong)
             return;
 
-        if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
-            return;
-
-        ViewModel.PlayFrom(selectedVm, selectedSong);
-    }
-
-    private void PlaylistList_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        const double scrollBarWidth = 18;
-        var totalWidth = PlaylistContent.Bounds.Width - scrollBarWidth;
-        if (totalWidth > 0) PlaylistList.Width = totalWidth * 4 / 12;
-        /*if (PlaylistView.Columns.Count > 0)
-        {
-            PlaylistView.Columns[0].Width = totalWidth * 4 / 12;
-        }*/
-    }
-
-    private void PlaylistList_OnSelected(object? sender, SelectionChangedEventArgs e)
-    {
-        if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
-            return;
-
-        OpenPlaylist(selectedVm);
-    }
-
-    private void PlaylistList_OnMouseDoubleClick(object? sender, RoutedEventArgs e)
-    {
-        if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
-            return;
-
-        ViewModel.SongsViewModel.RefreshSongs();
-        ViewModel.PlayFrom(selectedVm);
-    }
-
-    private async void AddPlaylist_Click(object? sender, RoutedEventArgs e)
-    {
-        var playlistWindow = new NewPlaylistWindow();
-        var result = await playlistWindow.ShowDialog<bool>(this);
-        if (result)
-        {
-            PlaylistList.SelectedItem = ViewModel.CreatePlaylist(playlistWindow.PlaylistName);
-        }
-        /*playlistWindow.ShowDialog<bool?>(this).ContinueWith(t =>
-        {
-            if (t.Result == true)
-            {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    PlaylistList.SelectedItem = ViewModel.CreatePlaylist(playlistWindow.PlaylistName);
-                });
-            }
-        });*/
-    }
-
-    private async void RemovePlaylist_Click(object? sender, RoutedEventArgs e)
-    {
-        if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
-            return;
-
-        if (selectedVm.Playlist == null)
-            return;
-
-        var deletePlaylistWindow = new DeletePlaylistWindow
-        {
-            WindowStartupLocation = WindowStartupLocation.CenterOwner
-        };
-        
-        var result = await deletePlaylistWindow.ShowDialog<bool>(this);
-        if (result)
-        {
-            ViewModel.DeletePlaylist(selectedVm);
-            ViewModel.SelectedPlaylist = ViewModel.GetAllSongsPlaylist();
-        }
-        /*deletePlaylistWindow.ShowDialog<bool?>(this).ContinueWith(t =>
-        {
-            if (t.Result == true)
-            {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    ViewModel.DeletePlaylist(selectedVm);
-                    ViewModel.SelectedPlaylist = ViewModel.GetAllSongsPlaylist();
-                });
-            }
-        });*/
+        ViewModel.PlayFrom(ViewModel.SelectedPlaylist, selectedSong);
     }
 
     private void Queue_OnClick(object? sender, RoutedEventArgs e)
@@ -539,12 +431,9 @@ public partial class MainWindow : Window
 
     private void PlaylistPlayBtn_OnBtnClick(object? sender, RoutedEventArgs e)
     {
-        if (PlaylistList.SelectedItem is not PlaylistViewModel selectedVm)
-            return;
-
-        if (!Equals(ViewModel.CurrentPlaylistPlaying, selectedVm))
+        if (!Equals(ViewModel.CurrentPlaylistPlaying, ViewModel.SelectedPlaylist))
         {
-            ViewModel.PlayFrom(selectedVm);
+            ViewModel.PlayFrom(ViewModel.SelectedPlaylist);
             return;
         }
 
@@ -556,21 +445,13 @@ public partial class MainWindow : Window
         ViewModel.ClearUserQueue();
     }
     
-    private void OpenPlaylist(PlaylistViewModel selectedVm)
-    {
-        ViewModel.SongsViewModel.LoadSongs(selectedVm);
-        SetPlaylistHeaderPlaying(_player.IsPlaying, selectedVm);
-        PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
-        SelectedPlaylistVm = selectedVm;
-    }
-
     private void GoToCurrentSongPlaylist(object? sender, RoutedEventArgs e)
     {
         if (ViewModel.CurrentSong == null)
             return;
 
         var songPlaylist = ViewModel.GetPlaylistModel(ViewModel.CurrentSong);
-        if (songPlaylist != null) OpenPlaylist(songPlaylist);
+        if (songPlaylist != null) ViewModel.OpenPlaylist(songPlaylist);
     }
 
     private void GoToCurrentPlaylistPlaying(object? sender, RoutedEventArgs e)
@@ -578,12 +459,7 @@ public partial class MainWindow : Window
         if (ViewModel.CurrentPlaylistPlaying == null)
             return;
 
-        OpenPlaylist(ViewModel.CurrentPlaylistPlaying);
-    }
-
-    private void TogglePlaylistsPanel(object? sender, RoutedEventArgs e)
-    {
-        ViewModel.IsPlaylistsPanelExpanded = !ViewModel.IsPlaylistsPanelExpanded;
+        ViewModel.OpenPlaylist();
     }
 }
 
