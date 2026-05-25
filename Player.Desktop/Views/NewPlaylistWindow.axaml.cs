@@ -7,7 +7,7 @@ namespace Player.Desktop.Views;
 
 public partial class NewPlaylistWindow : Window
 {
-    public string PlaylistName { get; set; }
+    public string PlaylistName { get; private set; } = "New Playlist";
     
     public NewPlaylistWindow()
     {
@@ -16,7 +16,7 @@ public partial class NewPlaylistWindow : Window
 
     private void OnOkClick(object? sender, RoutedEventArgs routedEventArgs)
     {
-        PlaylistName = TxtPlaylistName.Text;
+        PlaylistName = TxtPlaylistName.Text ?? "New Playlist";
         Close(true);
     }
 

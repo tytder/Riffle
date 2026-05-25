@@ -86,16 +86,12 @@ internal class MusicService
 
         // mark history entries
         var history = _db.SongHistory // whatever DbSet<SongPlayed> is called
-            .Where(h => h.PlayedFromId == dbPlaylist.Id)
+            .Where(h => h.PlaylistId == dbPlaylist.Id)
             .ToList();
 
         foreach (var h in history)
         {
-            if (h.PlayedFromName != null &&
-                !h.PlayedFromName.EndsWith(" (deleted)", StringComparison.Ordinal))
-            {
-                h.PlayedFromName += " (deleted)";
-            }
+            h.TryMarkPlaylistDeleted();
         }
 
         dbPlaylist.PlaylistItems.Clear();

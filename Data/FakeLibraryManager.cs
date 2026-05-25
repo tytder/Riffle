@@ -157,16 +157,12 @@ public class FakeLibraryManager : ILibraryManager
 
         // mark history entries
         var history = _songHistory // whatever DbSet<SongPlayed> is called
-            .Where(h => h.PlayedFromId == dbPlaylist.Id)
+            .Where(h => h.PlaylistId == dbPlaylist.Id)
             .ToList();
 
         foreach (var h in history)
         {
-            if (h.PlayedFromName != null &&
-                !h.PlayedFromName.EndsWith(" (deleted)", StringComparison.Ordinal))
-            {
-                h.PlayedFromName += " (deleted)";
-            }
+            h.TryMarkPlaylistDeleted();
         }
 
         dbPlaylist.PlaylistItems.Clear();

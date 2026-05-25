@@ -81,27 +81,28 @@ public class MusicDbContext : DbContext
         modelBuilder.Entity<SongPlayed>(entity =>
         {
             entity.ToTable("SongPlayed");
-
             entity.HasKey(sp => sp.Id);
-
-            entity.Property(sp => sp.Id)
-                .ValueGeneratedNever();
-
-            entity.Property(sp => sp.PlayedAt)
-                .IsRequired();
-
-            entity.Property(sp => sp.PlayedFromName)
-                .HasMaxLength(256); // or whatever feels right
+            entity.Property(sp => sp.Id).ValueGeneratedOnAdd();
+            entity.Property(sp => sp.PlayedAt).IsRequired();
+            entity.Property(sp => sp.PlayedFromName).HasMaxLength(256);
+            entity.Property(sp => sp.SongName).HasMaxLength(256);
+            entity.Property(sp => sp.ArtistName).HasMaxLength(256);
 
             entity.HasOne(sp => sp.Song)
                 .WithMany()
                 .HasForeignKey(sp => sp.SongId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            entity.HasOne(sp => sp.PlayedFrom)
+            entity.HasOne(sp => sp.Playlist)
                 .WithMany()
-                .HasForeignKey(sp => sp.PlayedFromId)
+                .HasForeignKey(sp => sp.PlaylistId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(sp => sp.PlaylistSong)
+                .WithMany()
+                .HasForeignKey(sp => sp.PlaylistSongId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 

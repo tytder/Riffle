@@ -5,6 +5,7 @@
         mc:Ignorable="d"
         Height="90" Width="250"
         x:Class="Player.Desktop.Views.DeletePlaylistWindow"
+        SystemDecorations="None"
         Title="DeletePlaylist">
     <StackPanel Margin="10" >
         <TextBlock TextWrapping="Wrap" Text="Are you sure you want to delete this playlist?"/>

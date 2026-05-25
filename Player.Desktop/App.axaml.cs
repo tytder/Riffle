@@ -71,8 +71,9 @@ public partial class App : Application
         {
             var player = ServiceProvider.GetRequiredService<VlcAudioPlayer>();
             var mainVm = ServiceProvider.GetRequiredService<MainWindowViewModel>();
+            var playbackMan = ServiceProvider.GetRequiredService<PlaybackManager>();
 
-            desktop.MainWindow = new MainWindow(mainVm, player);
+            desktop.MainWindow = new MainWindow(mainVm, player, playbackMan);
         }
 
         base.OnFrameworkInitializationCompleted();

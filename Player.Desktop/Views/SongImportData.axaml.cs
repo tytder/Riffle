@@ -8,11 +8,11 @@ namespace Player.Desktop;
 
 public partial class SongImportData : Window
 {
-    public string SongTitle { get; private set; }
-    public string ArtistName { get; private set; }
+    public string SongTitle { get; private set; } = null!;
+    public string ArtistName { get; private set; } = null!;
     public TimeSpan Duration { get; private set; }
 
-    private string _filePath;
+    private string _filePath = null!;
     public string FilePath
     {
         get => _filePath;
@@ -31,8 +31,8 @@ public partial class SongImportData : Window
 
     private void OnOkClick(object sender, RoutedEventArgs e)
     {
-        SongTitle = TxtSongTitle.Text;
-        ArtistName = TxtArtistName.Text;
+        SongTitle = TxtSongTitle.Text ?? _filePath.Split('\\')[^1][..^4]; // splits the file path and gets the name of the file, then removes the file extension;
+        ArtistName = TxtArtistName.Text ?? "";
         Close(true);
     }
 

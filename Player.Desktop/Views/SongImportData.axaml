@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" Height="250" Width="300"
         x:Class="Player.Desktop.SongImportData"
+        SystemDecorations="None"
         Title="SongImportData">
     <StackPanel Margin="10">
         <TextBlock Text="File Path:"/>

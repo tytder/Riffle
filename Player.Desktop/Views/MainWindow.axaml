@@ -1,13 +1,18 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Player.Desktop.ViewModels"
+        xmlns:views="using:Player.Desktop.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:Player.Desktop.Converters"
         xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:desktop="clr-namespace:Player.Desktop"
+        xmlns:global="clr-namespace:;assembly=Core"
+        mc:Ignorable="d"
         x:Class="Player.Desktop.MainWindow"
         x:DataType="vm:MainWindowViewModel"
+        ExtendClientAreaToDecorationsHint="True"
+        SystemDecorations="BorderOnly"
         Icon="/Assets/avalonia-logo.ico"
         Height="600"
         Width="900"
@@ -39,8 +44,7 @@
             UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>-->
 
-    <Grid
-        ClipToBounds="True">
+    <Grid ClipToBounds="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> 
             <RowDefinition Height="*"/>    
@@ -48,22 +52,25 @@
         </Grid.RowDefinitions>
 
         <!-- Top bar -->
-        <Grid Grid.Row="0" Background="#222" PointerPressed="Border_PointerPressed" Height="35">
+        <Border></Border>
+        <Grid Grid.Row="0" 
+              Background="#222" 
+              PointerPressed="Border_PointerPressed" 
+              Height="35"
+              >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel
-                Grid.Column="0"
-                Orientation="Horizontal">
-                <TextBlock
-                    Text="RifflePlayer"
-                    Foreground="White"
-                    FontSize="20"
-                    Margin="25,5,30,5"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center" />
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal">
+                <TextBlock Text="RifflePlayer"
+                           Foreground="White"
+                           FontSize="20"
+                           Margin="25,5,30,5"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center" />
             </StackPanel>
 
             <!-- Window Controls -->
@@ -108,8 +115,8 @@
         <!-- Main layout -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
@@ -205,19 +212,17 @@
 
             <!-- Songs -->
             
-            <ScrollViewer 
-                VerticalScrollBarVisibility="Auto"
-                Grid.Column="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Grid.Column="1">
                 <StackPanel>
                     <!-- Playlist Header -->
                     <Border Background="#222" Padding="10,5" Margin="0,0,0,0">
                         <StackPanel>
                             <TextBlock Text="{Binding SelectedPlaylist.Name}" 
                                        FontSize="56" FontWeight="Bold" Foreground="White"/>
-                            <TextBlock
-                                x:Name="PlaylistInfo"
-                                Text="0 songs, 0 hr 0 min"
-                                FontSize="14" Foreground="LightGray"/>
+                            <TextBlock x:Name="PlaylistInfo"
+                                        Text="0 songs, 0 hr 0 min"
+                                        FontSize="14" Foreground="LightGray"/>
                             <Grid Margin="0,5,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -226,10 +231,10 @@
                                 </Grid.ColumnDefinitions>
                                 
                                 <!--<StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">-->
-                                <StackPanel
-                                    Grid.Column="0"
-                                    Orientation="Horizontal"
-                                    HorizontalAlignment="Left">
+                                <StackPanel Grid.Column="0"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Left"
+                                            >
                                     <!--<Button 
                                         x:Name="PlaylistPlayBtn"
                                         Content="⏸" 
@@ -240,53 +245,52 @@
                                         Width="Auto" 
                                         Click="PlaylistPlayBtn_OnBtnClick"
                                     /> -->
-                                    <Button 
-                                        x:Name="PlaylistPlayBtn"
-                                        Content="▶" 
-                                        Padding="5,-1,5,0"
-                                        FontSize="12"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        Width="25"
-                                        Height="25"
-                                        Margin="0,0,5,0"
-                                        Background="LightGray"
-                                        Click="PlaylistPlayBtn_OnBtnClick"
+                                    <Button x:Name="PlaylistPlayBtn"
+                                            Content="▶" 
+                                            Padding="5,-1,5,0"
+                                            FontSize="12"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Width="25"
+                                            Height="25"
+                                            Margin="0,0,5,0"
+                                            Background="LightGray"
+                                            Click="PlaylistPlayBtn_OnBtnClick"
                                     />
                                         <!--Command="{Binding PlayPlaylistCommand}"--> 
-                                    <Button
-                                        x:Name="BtnShuffleHeader"
-                                        Content="🔀" 
-                                        FontSize="18"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        Width="25"
-                                        Height="25"
-                                        Margin="5,0"
-                                        Background="LightGray"
-                                        Foreground="Black"
-                                        Padding="-2,-3.3, -2 , -0.5" />
-                                    <Button
-                                        x:Name="BtnImportSong"
-                                        Click="BtnImportSong_OnClick"
-                                        FontWeight="Bold"
-                                        FontSize="22"
-                                        Content="+"
-                                        Background="LightGray"
-                                        Foreground="Black"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        Margin="5,0"
-                                        Height="25"
-                                        Width="25"
-                                        Padding="-2,-3.3, -2 , -0.5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center" />
+                                    <Button x:Name="BtnShuffleHeader"
+                                            Content="🔀" 
+                                            FontSize="18"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Width="25"
+                                            Height="25"
+                                            Margin="5,0"
+                                            Background="LightGray"
+                                            Foreground="Black"
+                                            Padding="-2,-3.3, -2 , -0.5" 
+                                            />
+                                    <Button x:Name="BtnImportSong"
+                                            Click="BtnImportSong_OnClick"
+                                            FontWeight="Bold"
+                                            FontSize="22"
+                                            Content="+"
+                                            Background="LightGray"
+                                            Foreground="Black"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Margin="5,0"
+                                            Height="25"
+                                            Width="25"
+                                            Padding="-2,-3.3, -2 , -0.5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" 
+                                            />
                                 </StackPanel>
-                                <StackPanel
-                                    Grid.Column="2"
-                                    Orientation="Horizontal" 
-                                    HorizontalAlignment="Right">
+                                <StackPanel Grid.Column="2"
+                                            Orientation="Horizontal" 
+                                            HorizontalAlignment="Right"
+                                            >
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBox x:Name="SearchBox"
                                                  Width="200"
@@ -325,13 +329,26 @@
 
                     <!-- Playlist Songs -->
                     <ListBox x:Name="PlaylistContent"
-                          ItemsSource="{Binding SongsViewModel.PlaylistSongs}"
-                          DoubleTapped="PlaylistContent_OnMouseDoubleClick"
-                          SizeChanged="PlaylistContent_OnSizeChanged"
-                          BorderThickness="0"
-                          Padding="10,0"
-                          >
-                          <!--Height = "Auto"-->
+                              ItemsSource="{Binding SongsViewModel.PlaylistSongs}"
+                              DoubleTapped="PlaylistContent_OnMouseDoubleClick"
+                              SizeChanged="PlaylistContent_OnSizeChanged"
+                              BorderThickness="0"
+                              Padding="10,0"
+                              VerticalAlignment="Stretch"
+                              >
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Add to queue" 
+                                          Command="{Binding AddToQueueCommand}"
+                                          CommandParameter="{Binding $parent[ListBox].SelectedItem}">
+                                    <!--<MenuItem.Icon>
+                                <PathIcon Data="{StaticResource edit_regular}" />
+                            </MenuItem.Icon>-->
+                                </MenuItem>
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                        
+                        <!--Height = "Auto"-->
 
                         <!--<ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
@@ -438,8 +455,9 @@
 
                                     <Grid.Tag>
                                         <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
-                                            <Binding Path="."/>
-                                            <Binding Path="$parent[Window].((vm:MainWindowViewModel)DataContext).CurrentSong"/>
+                                            <Binding Path="Id"/>
+                                            <!--<Binding Path="$parent[5].((vm:MainWindowViewModel)DataContext).CurrentSong"/>-->
+                                            <Binding RelativeSource="{RelativeSource AncestorType=desktop:MainWindow}" Path="((vm:MainWindowViewModel)DataContext).CurrentSong.PlaylistSongId"/>
                                         </MultiBinding>
                                     </Grid.Tag>
                                     
@@ -497,16 +515,14 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-
                 </StackPanel>
             </ScrollViewer>
             
-            <StackPanel
-                x:Name="QueueWindowGridSpace"
-                Width="200"
-                Grid.Column="2"
-                IsVisible="{Binding IsQueueWindowOpen}">
-            </StackPanel>
+            <StackPanel x:Name="QueueWindowGridSpace"
+                        Width="200"
+                        Grid.Column="2"
+                        IsVisible="{Binding IsQueueWindowOpen}"
+                        />
         </Grid>
 
         <!--<Border Background="White"
@@ -567,12 +583,9 @@
                 HorizontalAlignment="Right"
                 Grid.Row="1"
                 IsVisible="{Binding IsQueueWindowOpen}">
-
-            <TabControl Width="200" Margin="2">
-
+            <TabControl Width="200" Margin="2" TabStripPlacement="Top">
                 <TabControl.Template>
                     <ControlTemplate TargetType="TabControl">
-
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -587,9 +600,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <ItemsPresenter x:Name="HeaderPanel"
-                                          Grid.Column="0"
-                                          />
-                                          <!--IsItemsHost="True"-->
+                                                Grid.Column="0"
+                                                />
+                                                <!--IsItemsHost="True"-->
 
                                 <Button Grid.Column="1"
                                         Content="✕"
@@ -611,47 +624,43 @@
                     </ControlTemplate>
                 </TabControl.Template>
                 
-                <TabItem Header="Queue">
+                <TabItem Header="Queue" FontSize="12">
                     <Grid Margin="5,10">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/> <!-- Now Playing -->
-                            <RowDefinition Height="Auto"/> <!-- User Queue -->
-                            <RowDefinition Height="*"/>    <!-- Playlist Source: stretches fully -->
+                            <RowDefinition Height="Auto"/>  <!-- Now Playing -->
+                            <RowDefinition Height="*"/>     <!-- User Queue -->
+                            <RowDefinition Height="*"/>     <!-- Playlist Source -->
                         </Grid.RowDefinitions>
-                        <StackPanel
-                            Grid.Row="0"> <!-- Now playing -->
-                            <StackPanel
-                                Orientation="Horizontal"
-                                >
+                        
+                        <!-- Now playing -->
+                        <StackPanel Grid.Row="0">
+                            <StackPanel Orientation="Horizontal">
                                 <TextBlock FontSize="12" Foreground="Black"
                                            Text="Now playing from: "
                                            Padding="0,10,10,0"/>
-                                <Button 
-                                        HorizontalAlignment="Right"
+                                <Button HorizontalAlignment="Right"
                                         VerticalAlignment="Bottom"
                                         Background="Transparent"
                                         Foreground="Black"
                                         BorderThickness="0"
+                                        Content="{Binding CurrentSongPlaylistName}"
                                         Click="GoToCurrentSongPlaylist">
                                     <!--Width="Auto"-->
-                                    <Run Text="{Binding (vm:MainWindowViewModel).CurrentSongPlaylistName, 
-                                                          Mode=OneWay,
-                                                          RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                    <!--<Run Text="{Binding CurrentSongPlaylistName}"/>-->
                                 </Button>
                                 
                             </StackPanel>
-                            <TextBlock Text="{Binding (vm:MainWindowViewModel).CurrentSongTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                            <TextBlock Text="{Binding CurrentSongTitle}"
                                        FontSize="12" Foreground="Black"
                                        Padding="10,0,0,0"/>
-                            <TextBlock Text="{Binding (vm:MainWindowViewModel).CurrentSongArtist, RelativeSource={RelativeSource AncestorType=Window}}"
+                            <TextBlock Text="{Binding CurrentSongArtist}"
                                        FontSize="12" Foreground="Black"
                                        Padding="10,0,0,0"/>
                         </StackPanel>
-                        <Border
-                            Grid.Row="1"
-                            Background="White"
-                            x:Name="UserQueueOverlay" 
-                            IsVisible="{Binding IsQueueVisible}"> <!-- User queue -->
+                        <Border Grid.Row="1"
+                                Background="White"
+                                x:Name="UserQueueOverlay"
+                                IsVisible="{Binding IsQueueVisible}"> <!-- User queue -->
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/> <!-- Tab headers -->
@@ -667,49 +676,65 @@
                                                    FontSize="12" Foreground="Black"
                                                    HorizontalAlignment="Left"
                                                    VerticalAlignment="Bottom"/>
-                                        <Button
-                                            Grid.Column="1"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Bottom"
-                                            Content="Clear queue"
-                                            Background="Transparent"
-                                            Foreground="DimGray"
-                                            BorderThickness="0"
-                                            Click="ClearQueueClick"/>
-                                            <!--Width="Auto"-->
+                                        <Button Grid.Column="1"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Bottom"
+                                                Content="Clear queue"
+                                                Background="Transparent"
+                                                Foreground="DimGray"
+                                                BorderThickness="0"
+                                                Click="ClearQueueClick"/>
+                                                <!--Width="Auto"-->
                                 </Grid>
-                                <!-- TODO <ListBox 
-                                    Grid.Row="1"
-                                    x:Name="UserQueueList"
-                                >
-                                </ListBox>-->
+                                <ScrollViewer Grid.Row="1">
+                                    <ListBox x:Name="UserQueueList"
+                                            ItemsSource="{Binding PlaybackManager.Queue}"
+                                    >
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="*,Auto"
+                                                >
+                                                    <!-- TODO Padding="4"-->
+                                                    <!-- Title + Artist -->
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding (models:PlaylistSong).Song.Title}"
+                                                                   FontWeight="Bold"/>
+
+                                                        <TextBlock Text="{Binding (models:PlaylistSong).Song.Artist}"
+                                                                   FontStyle="Italic"
+                                                                   FontSize="12"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate> 
+                                        <!-- TODO: for performance, maybe only grab queue when queue opened and when queue updated while opened-->
+                                    </ListBox>
+                                </ScrollViewer>
                             </Grid>
                         </Border>
-                        <Border
-                            Grid.Row="2"
-                            x:Name="PlaylistSourceOverlay"
-                            IsVisible="{Binding IsCurrentPlayingPlaylistQueueVisible}"> <!-- Playlist Source -->
+                        <Border Grid.Row="2"
+                                x:Name="PlaylistSourceOverlay"
+                                IsVisible="{Binding IsCurrentPlayingPlaylistQueueVisible}"> <!-- Playlist Source -->
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/> <!-- Tab headers -->
                                     <RowDefinition Height="*"/>    <!-- Tab content -->
                                 </Grid.RowDefinitions>
                                 <StackPanel Orientation="Horizontal" 
-                                    Grid.Row="0">
-                                    <TextBlock
-                                        Padding="0,10,10,0"
-                                        FontSize="12" Foreground="Black" 
-                                        Text="Next from: "/>
-                                    <Button
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Bottom"
-                                        Background="Transparent"
-                                        Foreground="Black"
-                                        BorderThickness="0"
-                                        Click="GoToCurrentPlaylistPlaying">
-                                        <Run Text="{Binding (vm:MainWindowViewModel).CurrentPlaylistName, 
+                                        Grid.Row="0">
+                                    <TextBlock Padding="0,10,10,0"
+                                               FontSize="12" Foreground="Black" 
+                                               Text="Next from: "/>
+                                    <Button HorizontalAlignment="Right"
+                                            VerticalAlignment="Bottom"
+                                            Background="Transparent"
+                                            Foreground="Black"
+                                            BorderThickness="0"
+                                            Content="{Binding CurrentPlaylistName}"
+                                            Click="GoToCurrentPlaylistPlaying">
+                                        <!--<Run Text="{Binding (vm:MainWindowViewModel).CurrentPlaylistName, 
                                                           Mode=OneWay,
-                                                          RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"/>-->
                                     </Button>
                                         <!--Width="Auto"-->
                                 </StackPanel>
@@ -748,45 +773,42 @@
                                         </GridView>
                                     </ListBox.View>
                                 </ListBox>-->
-                                <ListBox Grid.Row="1"
-                                         x:Name="QueueListView"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ScrollViewer Grid.Row="1">
+                                    
+                                    <ListBox x:Name="QueueListView"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto">
 
-                                    <ListBox.ItemContainerTheme>
-                                        <ControlTheme TargetType="ListBoxItem">
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                        </ControlTheme>
-                                    </ListBox.ItemContainerTheme>
+                                        <!--<ListBox.ItemContainerTheme>
+                                            <ControlTheme TargetType="ListBoxItem">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            </ControlTheme>
+                                        </ListBox.ItemContainerTheme>-->
+                                        
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="*,Auto"
+                                                      >
+                                                      <!-- TODO Padding="4"-->
+                                                    <!-- Title + Artist -->
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding (models:PlaylistSong).Song.Title}"
+                                                                   FontWeight="Bold"/>
 
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-
-                                            <Grid ColumnDefinitions="*,Auto"
-                                                  >
-                                                  <!-- TODO Padding="4"-->
-
-                                                <!-- Title + Artist -->
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="{Binding (models:PlaylistSong).Song.Title}"
-                                                               FontWeight="Bold"/>
-
-                                                    <TextBlock Text="{Binding (models:PlaylistSong).Song.Artist}"
-                                                               FontStyle="Italic"
-                                                               FontSize="12"/>
-                                                </StackPanel>
-
-                                            </Grid>
-
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-
-                                </ListBox>
+                                                        <TextBlock Text="{Binding (models:PlaylistSong).Song.Artist}"
+                                                                   FontStyle="Italic"
+                                                                   FontSize="12"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate> 
+                                    </ListBox>
+                                </ScrollViewer>
                             </Grid>
                         </Border>
                     </Grid>
                 </TabItem>
-                <TabItem Header="Recently Played">
+                <TabItem Header="Recently Played" FontSize="12">
                     <!--<ListBox 
                         x:Name="RecentlyPlayedListBox"
                         ScrollViewer.HorizontalScrollBarVisibility="Hidden"
@@ -826,10 +848,10 @@
                                 <Grid>
 
                                     <StackPanel>
-                                        <TextBlock Text="{Binding (models:PlaylistSong).Song.Title}"
+                                        <TextBlock Text="{Binding (global:SongPlayed).SongName}"
                                                    FontWeight="Bold"/>
 
-                                        <TextBlock Text="{Binding (models:PlaylistSong).Song.Artist}"
+                                        <TextBlock Text="{Binding (global:SongPlayed).ArtistName}"
                                                    FontStyle="Italic"
                                                    FontSize="12"/>
                                     </StackPanel>
@@ -852,22 +874,20 @@
                 <ColumnDefinition Width="*"/> 
             </Grid.ColumnDefinitions>
             <!-- Left: Song title + artist -->
-            <StackPanel 
-                Grid.Column="0"
-                Margin="10" 
-                VerticalAlignment="Center" 
-                HorizontalAlignment="Left"
-                >
+            <StackPanel Grid.Column="0"
+                        Margin="10" 
+                        VerticalAlignment="Center" 
+                        HorizontalAlignment="Left"
+                        >
                 <TextBlock x:Name="TxtSongTitle" Text="Song Title" FontWeight="Bold" FontSize="14" Foreground="White"/>
                 <TextBlock x:Name="TxtArtistName" Text="Artist Name" FontSize="12" Foreground="White"/>
             </StackPanel>
 
             <!-- Middle: controls (nested grid for top + bottom rows) -->
-            <Grid
-                Grid.Column="1"
-                Margin="10"
-                HorizontalAlignment="Stretch"
-            >
+            <Grid Grid.Column="1"
+                  Margin="10"
+                  HorizontalAlignment="Stretch"
+                  >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/> <!-- buttons row -->
                     <RowDefinition Height="Auto"/> <!-- seekbar row -->
@@ -875,57 +895,52 @@
 
                 <!-- Buttons row -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button
-                        x:Name="BtnShuffle"
-                        Content="🔀" 
-                        FontSize="20"
-                        HorizontalContentAlignment="Center"
-                        Width="24"
-                        Height="24"
-                        Padding="-2.5,-3.5, -2, -0.5"
-                        Margin="5,5"
-                        />
-                    <Button
-                        x:Name="BtnPreviousSong"
-                        Content="⏮" 
-                        FontSize="20"
-                        HorizontalContentAlignment="Center"
-                        Width="24"
-                        Height="24"
-                        Padding="-2.5,-3.5, -2, -0.5"
-                        Margin="5,5"
-                        Click="BtnPreviousSong_OnClick" />
-                    <Button
-                        x:Name="BtnPauseResume"
-                        Content="▶" 
-                        FontSize="16"
-                        Padding="2,-2, 2, -0.5"
-                        HorizontalContentAlignment="Center"
-                        Width="24"
-                        Height="24"
-                        Margin="5,5"
-                        Click="OnPauseResume" />
-                    <Button
-                        x:Name="BtnNextSong"
-                        Content="⏭" 
-                        FontSize="20"
-                        HorizontalContentAlignment="Center"
-                        Width="24"
-                        Height="24"
-                        Padding="-2.5,-3.5, -2, -0.5"
-                        Margin="5,5"
-                        Click="BtnNextSong_OnClick" />
-                    <Button
-                        x:Name="BtnLoop"
-                        Content="🔁" 
-                        FontSize="20"
-                        HorizontalContentAlignment="Center"
-                        Width="24"
-                        Height="24"
-                        Padding="-2.5,-3.5, -2, -0.5"
-                        Margin="5,5"
-                        Click="BtnLoop_OnClick"
-                        Background="White" />
+                    <Button x:Name="BtnShuffle"
+                            Content="🔀" 
+                            FontSize="20"
+                            HorizontalContentAlignment="Center"
+                            Width="24"
+                            Height="24"
+                            Padding="-2.5,-3.5, -2, -0.5"
+                            Margin="5,5"
+                    />
+                    <Button x:Name="BtnPreviousSong"
+                            Content="⏮" 
+                            FontSize="20"
+                            HorizontalContentAlignment="Center"
+                            Width="24"
+                            Height="24"
+                            Padding="-2.5,-3.5, -2, -0.5"
+                            Margin="5,5"
+                            Click="BtnPreviousSong_OnClick" />
+                    <Button x:Name="BtnPauseResume"
+                            Content="▶" 
+                            FontSize="16"
+                            Padding="2,-2, 2, -0.5"
+                            HorizontalContentAlignment="Center"
+                            Width="24"
+                            Height="24"
+                            Margin="5,5"
+                            Click="OnPauseResume" />
+                    <Button x:Name="BtnNextSong"
+                            Content="⏭" 
+                            FontSize="20"
+                            HorizontalContentAlignment="Center"
+                            Width="24"
+                            Height="24"
+                            Padding="-2.5,-3.5, -2, -0.5"
+                            Margin="5,5"
+                            Click="BtnNextSong_OnClick" />
+                    <Button x:Name="BtnLoop"
+                            Content="🔁" 
+                            FontSize="20"
+                            HorizontalContentAlignment="Center"
+                            Width="24"
+                            Height="24"
+                            Padding="-2.5,-3.5, -2, -0.5"
+                            Margin="5,5"
+                            Click="BtnLoop_OnClick"
+                            Background="White" />
                 </StackPanel>
 
                 <!-- Seekbar row with times -->
@@ -936,45 +951,41 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock
-                        x:Name="TxtCurrentTime"
-                        Text="0:00"
-                        Grid.Column="0"
-                        VerticalAlignment="Center"
-                        Margin="5"
-                        Foreground="White" />
-                    <Slider
-                        x:Name="SeekBar"
-                        Grid.Column="1"
-                        Minimum="0"
-                        Maximum="100"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Center"
-                        Margin="5"
-                        PointerCaptureLost="SeekBar_PointerReleased"
-                        ValueChanged="SeekBar_ValueChanged">
+                    <TextBlock x:Name="TxtCurrentTime"
+                               Text="0:00"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Margin="5"
+                               Foreground="White" />
+                    <Slider x:Name="SeekBar"
+                            Grid.Column="1"
+                            Minimum="0"
+                            Maximum="100"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            Margin="5"
+                            PointerCaptureLost="SeekBar_PointerReleased"
+                            ValueChanged="SeekBar_ValueChanged">
                         <!--IsMoveToPointEnabled="False"-->
                         <!--PointerMoved="SeekBar_PointerMoved"
                         PointerPressed="SeekBar_PointerPressed"
                         Holding="SeekBar_Holding"
 -->
                     </Slider>
-                    <TextBlock
-                        x:Name="TxtTotalTime"
-                        Text="3:45"
-                        Grid.Column="2"
-                        VerticalAlignment="Center"
-                        Margin="5"
-                        Foreground="White" />
+                    <TextBlock x:Name="TxtTotalTime"
+                               Text="3:45"
+                               Grid.Column="2"
+                               VerticalAlignment="Center"
+                               Margin="5"
+                               Foreground="White" />
                 </Grid>
             </Grid>
 
             <!-- Right: Queue + volume -->
-            <Grid
-                Grid.Column="2"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Stretch"
-                Margin="10">
+            <Grid Grid.Column="2"
+                  VerticalAlignment="Center"
+                  HorizontalAlignment="Stretch"
+                  Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -983,37 +994,33 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock
-                    x:Name="TxtVolumePercentage"
-                    Grid.Column="1"
-                    Grid.Row="0"
-                    HorizontalAlignment="Center"
-                    Text="100%"
-                    Foreground="White"
-                    />
-                <Button 
-                    Content="Q" 
-                    Margin="0,5" 
-                    Grid.Column="0"
-                    Grid.Row="1"
-                    HorizontalAlignment="Right"
-                    Click="Queue_OnClick" />
-                <Slider
-                    x:Name="VolumeBar"
-                    Minimum="0"
-                    Maximum="100"
-                    Value="100"
-                    HorizontalAlignment="Stretch"
-                    MinWidth="10"
-                    MaxWidth="200"
-                    VerticalAlignment="Center"
-                    Margin="0"
-                    Grid.Column="1"
-                    Grid.Row="1"
-                    ValueChanged="VolumeBar_ValueChanged" />
+                <TextBlock x:Name="TxtVolumePercentage"
+                           Grid.Column="1"
+                           Grid.Row="0"
+                           HorizontalAlignment="Center"
+                           Text="100%"
+                           Foreground="White"
+                />
+                <Button Content="Q" 
+                        Margin="0,5" 
+                        Grid.Column="0"
+                        Grid.Row="1"
+                        HorizontalAlignment="Right"
+                        Click="Queue_OnClick" />
+                <Slider x:Name="VolumeBar"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="100"
+                        HorizontalAlignment="Stretch"
+                        MinWidth="10"
+                        MaxWidth="200"
+                        VerticalAlignment="Center"
+                        Margin="0"
+                        Grid.Column="1"
+                        Grid.Row="1"
+                        ValueChanged="VolumeBar_ValueChanged" />
                     <!--IsMoveToPointEnabled="True"-->
             </Grid>
         </Grid>
-
     </Grid>
 </Window>

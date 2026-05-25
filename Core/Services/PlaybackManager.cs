@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -11,7 +12,8 @@ namespace Riffle.Core.Services;
 
 public class PlaybackManager : INotifyPropertyChanged
 {
-    public ObservableQueue<PlaylistSong> Queue; // TODO: currently this is the TotalQueue, change to be user queued songs and then play those first before playing source songs
+    public List<PlaylistSong> Queue => _queue.ToList();
+    private ObservableQueue<PlaylistSong> _queue; 
     public event NotifyCollectionChangedEventHandler? QueueCollectionChanged;
     public ObservableQueue<SongPlayed> RecentlyPlayed;
     
@@ -42,8 +44,8 @@ public class PlaybackManager : INotifyPropertyChanged
         _player = audioPlayer;
         _player.TrackEnded += PlayerOnTrackEnded;
         RecentlyPlayed = new ObservableQueue<SongPlayed>(50, true);
-        Queue = new ObservableQueue<PlaylistSong>();
-        Queue.CollectionChanged += OnQueueCollectionChanged;
+        _queue = new ObservableQueue<PlaylistSong>();
+        _queue.CollectionChanged += OnQueueCollectionChanged;
         TotalQueue = new ObservableQueue<PlaylistSong>();
     }
 
@@ -66,8 +68,8 @@ public class PlaybackManager : INotifyPropertyChanged
         RecreateTotalQueue(song);
         
         var curSong = TotalQueue.Peek();
-        CurrentSong = new SongPlayed(curSong.Song, DateTime.UtcNow, playlist);
-        _player.Play(CurrentSong);
+        CurrentSong = new SongPlayed(curSong, DateTime.UtcNow);
+        _player.Play(CurrentSong!);
     }
 
     public void Stop()
@@ -75,7 +77,9 @@ public class PlaybackManager : INotifyPropertyChanged
         if (CurrentSong != null)
         {
             var handler = TrackStopped;
-            handler?.Invoke(this, new TrackEventArgs(CurrentSong));
+            handler?.Invoke(this, new TrackEventArgs(CurrentSong!));
+            RecentlyPlayed.Enqueue(CurrentSong);
+            OnPropertyChanged(nameof(RecentlyPlayed));
         }
         _player.StopAll();
     }
@@ -171,12 +175,12 @@ public class PlaybackManager : INotifyPropertyChanged
             throw new NullReferenceException(
                 $"{nameof(RecreateTotalQueue)} was called while {nameof(_playlistSource)} is null)");
         var startIndex = 0;
-        if (!Queue.Contains(song))
+        if (!_queue.Contains(song))
         {
             startIndex = _playlistSource.IndexOf(song);
         }
         var ordered = _playlistSource.Skip(startIndex).Concat(_playlistSource.Take(IsLooping ? startIndex : 0));
-        var queue = Queue.ToList();
+        var queue = _queue.ToList();
         queue.AddRange(ordered);
         TotalQueue = new ObservableQueue<PlaylistSong>(queue);
     }
@@ -188,10 +192,15 @@ public class PlaybackManager : INotifyPropertyChanged
         
         _playingPlaylist = null;
     }
+
+    public void AddToUserQueue(PlaylistSong songToAdd)
+    {
+        _queue.Add(songToAdd);
+    }
     
     public void ClearUserQueue()
     {
-        Queue.Clear();
+        _queue.Clear();
     }
     
     public event PropertyChangedEventHandler? PropertyChanged;

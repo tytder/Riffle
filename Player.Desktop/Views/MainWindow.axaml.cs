@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using Avalonia;
@@ -10,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Player.Desktop.Models;
 using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Models;
@@ -27,6 +29,7 @@ namespace Player.Desktop;
 public partial class MainWindow : Window
 {
     private readonly IAudioPlayer _player;
+    private readonly PlaybackManager _playbackManager;
 
     private readonly SolidColorBrush _buttonInactiveBrush;
     private readonly SolidColorBrush _buttonActiveBrush;
@@ -39,9 +42,12 @@ public partial class MainWindow : Window
     };
 
     public MainWindowViewModel ViewModel { get; }
+    // TODO: 2-way binding!!!
+    public PlaylistViewModel? SelectedPlaylistVm { get; set; }
 
     private bool _isDraggingBar;
     private bool _seekBarWasRecentlyAutoUpdated;
+    private readonly DispatcherTimer _timer;
 
     public MainWindow()
     {
@@ -58,9 +64,9 @@ public partial class MainWindow : Window
         ViewModel.SidebarViewModel.RefreshPlaylists();
         DataContext = ViewModel;
 
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
-        timer.Tick += Timer_Tick;
-        timer.Start();
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _timer.Tick += Timer_Tick;
+        _timer.Start();
 
         _player.TrackLoaded += Player_TrackLoaded;
         _player.StopAllCalled += OnStopCalled;
@@ -72,11 +78,15 @@ public partial class MainWindow : Window
         BtnLoop.Background = _buttonInactiveBrush;
         BtnShuffle.Background = _buttonInactiveBrush;
         BtnShuffleHeader.Background = _buttonInactiveBrush;
+
+        _playbackManager = new PlaybackManager(_player);
+        _playbackManager.QueueCollectionChanged += PlaybackManagerOnQueueCollectionChanged;
     }
-    
+
     public MainWindow(
         MainWindowViewModel vm,
-        IAudioPlayer player)
+        IAudioPlayer player,
+        PlaybackManager playbackManager)
     {
         InitializeComponent();
 
@@ -86,10 +96,11 @@ public partial class MainWindow : Window
 
         PlaylistList.SelectedIndex = 0;
         DataContext = ViewModel;
+        PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
 
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
-        timer.Tick += Timer_Tick;
-        timer.Start();
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _timer.Tick += Timer_Tick;
+        _timer.Start();
 
         _player.TrackLoaded += Player_TrackLoaded;
         _player.StopAllCalled += OnStopCalled;
@@ -101,6 +112,38 @@ public partial class MainWindow : Window
         BtnLoop.Background = _buttonInactiveBrush;
         BtnShuffle.Background = _buttonInactiveBrush;
         BtnShuffleHeader.Background = _buttonInactiveBrush;
+
+        _playbackManager = playbackManager;
+        _playbackManager.QueueCollectionChanged += PlaybackManagerOnQueueCollectionChanged;
+
+        //LayoutUpdated;
+        //Resized;
+    }
+    
+    ~MainWindow() 
+    {
+        if (_player != null)
+        {
+            _player.PlayingStateChanged -= PlayerOnPlayingStateChanged;
+            _player.TrackLoaded -= Player_TrackLoaded;
+            _player.StopAllCalled -= OnStopCalled;
+        }
+
+        if (_playbackManager != null)
+        {
+            _playbackManager.QueueCollectionChanged -= PlaybackManagerOnQueueCollectionChanged;
+        }
+
+        if (_timer != null)
+        {
+            _timer.Stop();
+            _timer.Tick -= Timer_Tick;
+        }
+    }
+    
+    private void PlaybackManagerOnQueueCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        UserQueueList.ItemsSource = _playbackManager.Queue;
     }
 
     private void PlayerOnPlayingStateChanged(object? sender, PlayingStateEventArgs e)
@@ -113,7 +156,7 @@ public partial class MainWindow : Window
         base.OnClosed(e);
         _player.Dispose();
     }
-
+    
     private void Minimize_Click(object? sender, RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;
@@ -238,18 +281,6 @@ public partial class MainWindow : Window
         //double totalSeconds;
         if (_player.HasTrackLoaded)
             TxtCurrentTime.Text = SeekBar.Value.ToMmSs();
-            /*
-        {
-            if (!_isDraggingBar)
-            {
-                totalSeconds = _player.CurrentTime.TotalSeconds;
-            }
-            else
-            {
-                totalSeconds = SeekBar.Maximum;
-            }
-        }
-            */
 
         _seekBarWasRecentlyAutoUpdated = false;
     }
@@ -271,16 +302,6 @@ public partial class MainWindow : Window
     // Import songs – converted to Avalonia's OpenFileDialog (async)
     private async void BtnImportSong_OnClick(object? sender, RoutedEventArgs e)
     {
-        // Rough scrollbar width approximation in place of SystemParameters.VerticalScrollBarWidth
-        const double scrollBarWidth = 18;
-
-        var totalWidth = PlaylistContent.Bounds.Width
-                         - scrollBarWidth
-                         /*- GridView.Columns[0].Width
-                         - GridView.Columns[^1].Width*/
-                         - PlaylistContent.Padding.Left
-                         - PlaylistContent.Padding.Right;
-
         var files = await StorageProvider.OpenFilePickerAsync(
             new FilePickerOpenOptions()
             {
@@ -288,7 +309,7 @@ public partial class MainWindow : Window
                 FileTypeFilter = [AudioAll],
             });
 
-        if (files is null || files.Count == 0)
+        if (files.Count == 0)
             return;
 
         foreach (var file in files)
@@ -340,6 +361,7 @@ public partial class MainWindow : Window
 
         ViewModel.PlayFrom(selectedVm, newPlaylistSong);
     }
+
 
     private void PlaylistContent_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
@@ -541,6 +563,14 @@ public partial class MainWindow : Window
     {
         ViewModel.ClearUserQueue();
     }
+    
+    private void OpenPlaylist(PlaylistViewModel selectedVm)
+    {
+        ViewModel.SongsViewModel.LoadSongs(selectedVm);
+        SetPlaylistHeaderPlaying(_player.IsPlaying, selectedVm);
+        PlaylistInfo.Text = ViewModel.SelectedPlaylistInfo;
+        SelectedPlaylistVm = selectedVm;
+    }
 
     private void GoToCurrentSongPlaylist(object? sender, RoutedEventArgs e)
     {
@@ -548,7 +578,7 @@ public partial class MainWindow : Window
             return;
 
         var songPlaylist = ViewModel.GetPlaylistModel(ViewModel.CurrentSong);
-        OpenPlaylist(songPlaylist);
+        if (songPlaylist != null) OpenPlaylist(songPlaylist);
     }
 
     private void GoToCurrentPlaylistPlaying(object? sender, RoutedEventArgs e)
@@ -557,6 +587,11 @@ public partial class MainWindow : Window
             return;
 
         OpenPlaylist(ViewModel.CurrentPlaylistPlaying);
+    }
+
+    private void TogglePlaylistsPanel(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.IsPlaylistsPanelExpanded = !ViewModel.IsPlaylistsPanelExpanded;
     }
 }
 

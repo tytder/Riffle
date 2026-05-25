@@ -4,9 +4,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data", "Data\Data.csproj", "{9B7675CF-7DB7-4BBB-8640-422ECB7B5DE0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Player.Windows", "Player.Windows\Player.Windows.csproj", "{1E37A1A9-F9E5-4D37-8A12-361EA3F2EFD1}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Player.Desktop", "Player.Desktop\Player.Desktop.csproj", "{DC01CD98-D0E8-415B-B1EB-E6412AA55FD9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Player", "Player\Player.csproj", "{70CB534C-8FFF-4226-B970-1E00EA9040F5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,12 +22,13 @@ Global
 		{9B7675CF-7DB7-4BBB-8640-422ECB7B5DE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B7675CF-7DB7-4BBB-8640-422ECB7B5DE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B7675CF-7DB7-4BBB-8640-422ECB7B5DE0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1E37A1A9-F9E5-4D37-8A12-361EA3F2EFD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1E37A1A9-F9E5-4D37-8A12-361EA3F2EFD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1E37A1A9-F9E5-4D37-8A12-361EA3F2EFD1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DC01CD98-D0E8-415B-B1EB-E6412AA55FD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DC01CD98-D0E8-415B-B1EB-E6412AA55FD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC01CD98-D0E8-415B-B1EB-E6412AA55FD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC01CD98-D0E8-415B-B1EB-E6412AA55FD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70CB534C-8FFF-4226-B970-1E00EA9040F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70CB534C-8FFF-4226-B970-1E00EA9040F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70CB534C-8FFF-4226-B970-1E00EA9040F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70CB534C-8FFF-4226-B970-1E00EA9040F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

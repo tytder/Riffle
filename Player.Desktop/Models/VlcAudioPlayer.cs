@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using Avalonia.Threading;
 using LibVLCSharp.Shared;
 using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Interfaces;
@@ -22,8 +23,9 @@ namespace Player.Desktop.Models
 
                 if (value) _mediaPlayer.Play();
                 else _mediaPlayer.Pause();
-
-                PlayingStateChanged?.Invoke(this, new PlayingStateEventArgs(value));
+                
+                Dispatcher.UIThread.Post(
+                    () => PlayingStateChanged?.Invoke(this, new PlayingStateEventArgs(value)));
             }
         }
 
@@ -49,10 +51,12 @@ namespace Player.Desktop.Models
             _libVlc = new LibVLC();
             _mediaPlayer = new MediaPlayer(_libVlc);
 
-            _mediaPlayer.EndReached += (_, _) =>
-            {
-                TrackEnded?.Invoke(this, EventArgs.Empty);
-            };
+            _mediaPlayer.EndReached += MediaPlayerOnEndReached;
+        }
+
+        private void MediaPlayerOnEndReached(object? sender, EventArgs e)
+        {
+            Dispatcher.UIThread.Post(() => TrackEnded?.Invoke(sender, e));
         }
 
         public void Play(Song song)
@@ -68,7 +72,7 @@ namespace Player.Desktop.Models
             HasTrackLoaded = true;
             IsPlaying = true;
 
-            TrackLoaded?.Invoke(this, new TrackEventArgs(song));
+            Dispatcher.UIThread.Post(() => TrackLoaded?.Invoke(this, new TrackEventArgs(song)));
         }
 
         public void SetVolume(float volume)
@@ -96,13 +100,13 @@ namespace Player.Desktop.Models
                 _mediaPlayer.Stop();
 
             _mediaPlayer.Media?.Dispose();
-            _mediaPlayer.Media = null;
+            //_mediaPlayer.Media = null;
 
             SongTitle = "No file selected";
             HasTrackLoaded = false;
             IsPlaying = false;
 
-            StopAllCalled?.Invoke(this, EventArgs.Empty);
+            Dispatcher.UIThread.Post(() => StopAllCalled?.Invoke(this, EventArgs.Empty));
         }
 
         public void Dispose()

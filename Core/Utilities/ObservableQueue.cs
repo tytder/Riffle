@@ -7,6 +7,8 @@ public class ObservableQueue<T> : ObservableCollection<T>
     private readonly bool _isReverseQueue;
     private readonly int _maxCapacity;
 
+    public IList<T> Entries => Items; 
+
     public ObservableQueue(int maxCapacity = int.MaxValue, bool isReverseQueue = false)
     {
         _maxCapacity = maxCapacity;

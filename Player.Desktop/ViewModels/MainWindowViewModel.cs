@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Avalonia.Controls;
+using Player.Commands;
 using Player.Desktop.Models;
 using Riffle.Core.CustomEventArgs;
 using Riffle.Core.Interfaces;
@@ -16,6 +20,7 @@ namespace Player.Desktop.ViewModels;
 public class MainWindowViewModel : ViewModelBase
 {
     private readonly PlaybackManager _playbackManager;
+    protected PlaybackManager PlaybackManager => _playbackManager;
     private readonly ILibraryManager _libraryManager;
 
     public SidebarViewModel SidebarViewModel { get; }
@@ -42,7 +47,7 @@ public class MainWindowViewModel : ViewModelBase
         get
         {
             if (CurrentSong == null) return "";
-            return CurrentSong.PlayedFrom.Name;
+            return CurrentSong.PlayedFromName ?? "Deleted playlist";
         }
     }
     
@@ -67,14 +72,14 @@ public class MainWindowViewModel : ViewModelBase
     
     public bool IsCurrentPlayingPlaylistQueueVisible => CurrentPlaylistPlaying != null;
 
-    public string CurrentSongTitle => _playbackManager.CurrentSong?.Song.Title ?? "No song selected";
-    public string CurrentSongArtist => _playbackManager.CurrentSong?.Song.Artist ?? "";
+    public string CurrentSongTitle => _playbackManager.CurrentSong?.SongName ?? "No song selected";
+    public string CurrentSongArtist => _playbackManager.CurrentSong?.ArtistName ?? "";
     public SongPlayed? CurrentSong => _playbackManager.CurrentSong;
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
     public ObservableQueue<PlaylistSong> TotalQueue => _playbackManager.TotalQueue;
-    public ObservableQueue<PlaylistSong> Queue => _playbackManager.Queue;
-    public bool IsQueueVisible => Queue.Count > 0;
+    public List<PlaylistSong> Queue => _playbackManager.Queue;
+    public bool IsQueueVisible => Queue.Count > 0; // TODO: figure out how to update this.
     
     private bool _isQueueWindowOpen;
 
@@ -92,6 +97,14 @@ public class MainWindowViewModel : ViewModelBase
     }
     public ObservableQueue<SongPlayed> RecentlyPlayed => _playbackManager.RecentlyPlayed;
     public bool IsLooping => _playbackManager.IsLooping;
+    public RelayCommand AddToQueueCommand { get; }
+
+    private bool _isPlaylistsPanelExpanded;
+    public bool IsPlaylistsPanelExpanded
+    {
+        get => _isPlaylistsPanelExpanded;
+        set => _isPlaylistsPanelExpanded = value;
+    }
 
     public event EventHandler<PlaylistEventArgs>? PlaylistRemoved;
 
@@ -108,7 +121,8 @@ public class MainWindowViewModel : ViewModelBase
         ILibraryManager libraryManager,
         IAudioPlayer player,
         SidebarViewModel sidebarVm,
-        SongsViewModel songsVm)
+        SongsViewModel songsVm,
+        PlaybackManager playbackManager)
     {
         _libraryManager = libraryManager;
         SidebarViewModel = sidebarVm;
@@ -116,9 +130,34 @@ public class MainWindowViewModel : ViewModelBase
         SongsViewModel = songsVm;
         //SongsViewModel = new SongsViewModel(musicService);
         SelectedPlaylist = SidebarViewModel.Playlists[0];
-        _playbackManager = new PlaybackManager(player);
-        _playbackManager.PropertyChanged += Playback_PropertyChanged;
+        _playbackManager = playbackManager;
+        _playbackManager.PropertyChanged += PlaybackPropertyChanged;
+        _playbackManager.QueueCollectionChanged += PlaybackQueueChanged;
         PlaylistRemoved += _playbackManager.OnPlaylistRemoved;
+        AddToQueueCommand = new RelayCommand(AddToQueue);
+    }
+
+    ~MainWindowViewModel()
+    {
+        if (_playbackManager != null)
+        {
+            _playbackManager.PropertyChanged -= PlaybackPropertyChanged;
+            _playbackManager.QueueCollectionChanged -= PlaybackQueueChanged;
+            PlaylistRemoved -= _playbackManager.OnPlaylistRemoved;
+        }
+    }
+
+    private void PlaybackQueueChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(Queue));
+        OnPropertyChanged(nameof(IsQueueVisible));
+    }
+
+    private void AddToQueue(object? selectedItem)
+    {
+        if (selectedItem is not PlaylistSong playlistSong) return;
+        
+        _playbackManager.AddToUserQueue(playlistSong);
     }
 
     public void ToggleLoop()
@@ -166,7 +205,7 @@ public class MainWindowViewModel : ViewModelBase
         return playlist[0]; // TODO: take into account shuffle logic
     }
 
-    private void Playback_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void PlaybackPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(_playbackManager.CurrentSong))
         {
@@ -175,6 +214,8 @@ public class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(CurrentSongArtist));
             OnPropertyChanged(nameof(CurrentSongPlaylistName));
         }
+        if (e.PropertyName == nameof(_playbackManager.RecentlyPlayed))
+            OnPropertyChanged(nameof(RecentlyPlayed));
     }
 
     public PlaylistSong AddSong(Song newSong, Playlist playlist)
@@ -215,10 +256,18 @@ public class MainWindowViewModel : ViewModelBase
         _playbackManager.ClearUserQueue();
     }
     
-    public PlaylistViewModel GetPlaylistModel(SongPlayed viewModelCurrentSong)
+    public PlaylistViewModel? GetPlaylistModel(SongPlayed viewModelCurrentSong)
     {
-        var playlistViewModel = SidebarViewModel.GetPlaylist(viewModelCurrentSong.PlayedFrom.Id);
-        playlistViewModel ??= SidebarViewModel.AddPlaylist(viewModelCurrentSong.PlayedFrom);
+        PlaylistViewModel? playlistViewModel = null;
+        if (viewModelCurrentSong.SongId.HasValue)
+            playlistViewModel = SidebarViewModel.GetPlaylist(viewModelCurrentSong.SongId.Value);
+        if (viewModelCurrentSong.Playlist != null)
+            playlistViewModel ??= SidebarViewModel.AddPlaylist(viewModelCurrentSong.Playlist);
         return playlistViewModel;
+    }
+
+    public void OpenPlaylist(PlaylistViewModel selectedVm)
+    {
+        
     }
 }

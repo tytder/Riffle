@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using Avalonia.Data.Converters;
+using Player.Desktop.ViewModels;
 using Riffle.Core.Models;
 
 namespace Player.Desktop.Converters;
@@ -14,7 +15,7 @@ public class ReferenceEqualityConverter : IMultiValueConverter /*IValueConverter
         
         if (values[0] is Guid id1 && values[1] is Guid id2)
             return id1.Equals(id2);
-
+        
         return false;
         
         /*if (values[0] is PlaylistViewModel openPlaylist

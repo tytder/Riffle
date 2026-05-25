@@ -5,6 +5,7 @@
         mc:Ignorable="d"
         Height="120" Width="250"
         x:Class="Player.Desktop.Views.NewPlaylistWindow"
+        SystemDecorations="None"
         Background="White"
         Title="NewPlaylist">
     <StackPanel Margin="10">
