@@ -9,6 +9,9 @@ namespace Player.Desktop.ViewModels;
 
 public class DesignerMainWindowViewModel : MainWindowViewModel
 {
+
+    public new bool IsQueueVisible => true;
+    
     public DesignerMainWindowViewModel(
         ILibraryManager fakeLibraryManager,
         IAudioPlayer audioPlayer) : base(

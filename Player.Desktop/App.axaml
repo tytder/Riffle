@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Player.Desktop.App"
              xmlns:local="using:Player.Desktop"
+             xmlns:controls="clr-namespace:Player.Controls;assembly=Player"
              RequestedThemeVariant="Light">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
@@ -11,10 +12,22 @@
              
      <Application.Styles>
          <FluentTheme />
+         
+         
      </Application.Styles>
              
     <Application.Resources>
-        <SolidColorBrush x:Key="ForegroundDefault">Black</SolidColorBrush>
-        <SolidColorBrush x:Key="ForegroundPlaying">Green</SolidColorBrush>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Player/Themes/ScrollableTabControl.axaml"/>
+                <ResourceInclude Source="avares://Player/Themes/RiffleResources.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+        
+        <!--
+
+        _buttonInactiveBrush = new SolidColorBrush(buttonInactiveColor);
+        _buttonActiveBrush = new SolidColorBrush(Colors.White);
+-->
     </Application.Resources>
 </Application>

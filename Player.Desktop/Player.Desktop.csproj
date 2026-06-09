@@ -38,5 +38,21 @@
         <DependentUpon>SongImportData.axaml</DependentUpon>
         <SubType>Code</SubType>
       </Compile>
+      <Compile Update="Views\QueueOverlay\QueueOverlayPanel.axaml.cs">
+        <DependentUpon>QueueOverlayPanel.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+      <Compile Update="Views\QueueOverlay\ComingUpPanel.axaml.cs">
+        <DependentUpon>ComingUpPanel.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+      <Compile Update="Views\QueueOverlay\QueuePanel.axaml.cs">
+        <DependentUpon>QueuePanel.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+      <Compile Update="Views\QueueOverlay\RecentlyPlayedPanel.axaml.cs">
+        <DependentUpon>RecentlyPlayedPanel.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
     </ItemGroup>
 </Project>

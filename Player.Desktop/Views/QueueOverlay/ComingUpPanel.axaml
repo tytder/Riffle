@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Player.Desktop.ViewModels"
+             xmlns:converters="clr-namespace:Player.Desktop.Converters"
+             xmlns:desktop="clr-namespace:Player.Desktop"
+             xmlns:views="clr-namespace:Player.Desktop.Views"
+             xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
+             xmlns:global="clr-namespace:;assembly=Core"
+             mc:Ignorable="d" d:DesignWidth="206" d:DesignHeight="450"
+             x:DataType="vm:MainWindowViewModel"
+             x:Class="Player.Desktop.Views.ComingUpPanel">
+    <!--<ListBox 
+                        x:Name="RecentlyPlayedListBox"
+                        ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        BorderThickness="0"
+                        >
+                        <ListBox.Resources>
+                            <Style TargetType="GridViewColumnHeader">
+                                <Setter Property="IsHitTestVisible" Value="False" />
+                                <Setter Property="Height" Value="0"></Setter>
+                            </Style>
+                        </ListBox.Resources>
+                        <ListBox.View>
+                            <GridView>
+                                <GridViewColumn>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Vertical"
+                                                        d:DataContext="{d:DesignInstance models:SongPlayed, IsDesignTimeCreatable=False}">
+                                                <TextBlock Text="{Binding Song.Title}" FontWeight="Bold" />
+                                                <TextBlock Text="{Binding Song.Artist}" FontStyle="Italic" FontSize="12" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListBox.View>
+                    </ListBox>-->
+                    <ListBox x:Name="ComingUpList"
+                             ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ItemsSource="{Binding TotalQueue}"
+                             BorderThickness="0">
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+
+                                <Grid>
+
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding (global:SongPlayed).SongName}"
+                                                   FontWeight="Bold"/>
+
+                                        <TextBlock Text="{Binding (global:SongPlayed).ArtistName}"
+                                                   FontStyle="Italic"
+                                                   FontSize="12"/>
+                                    </StackPanel>
+
+                                </Grid>
+
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+
+                    </ListBox>
+</UserControl>

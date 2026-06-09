@@ -4,6 +4,7 @@ using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Player.Desktop.Models;
@@ -69,11 +70,9 @@ public partial class App : Application
         // --- WINDOW SETUP ---
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var player = ServiceProvider.GetRequiredService<VlcAudioPlayer>();
             var mainVm = ServiceProvider.GetRequiredService<MainWindowViewModel>();
-            var playbackMan = ServiceProvider.GetRequiredService<PlaybackManager>();
 
-            desktop.MainWindow = new MainWindow(mainVm, player, playbackMan);
+            desktop.MainWindow = new MainWindow(mainVm);
         }
         
         base.OnFrameworkInitializationCompleted();

@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -12,7 +13,7 @@ namespace Riffle.Core.Services;
 
 public class PlaybackManager : INotifyPropertyChanged
 {
-    public List<PlaylistSong> Queue => _queue.ToList();
+    public ObservableCollection<PlaylistSong> Queue => _queue;
     private ObservableQueue<PlaylistSong> _queue; 
     public event NotifyCollectionChangedEventHandler? QueueCollectionChanged;
     public ObservableQueue<SongPlayed> RecentlyPlayed;
@@ -51,6 +52,7 @@ public class PlaybackManager : INotifyPropertyChanged
 
     private void OnQueueCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        OnPropertyChanged(nameof(Queue));
         var handler = QueueCollectionChanged;
         handler?.Invoke(sender, e);
     }

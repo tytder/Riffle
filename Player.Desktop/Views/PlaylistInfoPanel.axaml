@@ -1,0 +1,332 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Player.Desktop.ViewModels"
+             xmlns:views="using:Player.Desktop.Views"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:Player.Desktop.Converters"
+             xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
+             xmlns:desktop="clr-namespace:Player.Desktop"
+             xmlns:global="clr-namespace:;assembly=Core"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="vm:MainWindowViewModel"
+             x:Class="Player.Desktop.Views.PlaylistInfoPanel">
+            
+    
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Player/Themes/RiffleResources.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+        <converters:ReferenceEqualityConverter x:Key="ReferenceEqualityConverter"/>
+        <converters:IndexToNumberConverter x:Key="IndexToNumberConverter"/>
+    </UserControl.Resources>
+    <!-- Songs -->
+    
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <!-- Playlist Header -->
+            <Border Background="#222" Padding="10,5" Margin="0,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding SelectedPlaylist.Name}" 
+                               FontSize="56" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock x:Name="PlaylistInfo"
+                                Text="{Binding SelectedPlaylistInfo}"
+                                FontSize="14" Foreground="LightGray"/>
+                    <Grid Margin="0,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!--<StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">-->
+                        <StackPanel Grid.Column="0"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Left"
+                                    >
+                            <!--<Button 
+                                x:Name="PlaylistPlayBtn"
+                                Content="⏸" 
+                                Padding="-2,-2,-2,-0.5"
+                                FontSize="18"
+                                Margin="0,0,10,0"
+                                Command="{Binding PlayPlaylistCommand}" 
+                                Width="Auto" 
+                                Click="PlaylistPlayBtn_OnBtnClick"
+                            /> -->
+                            <Button x:Name="PlaylistPlayBtn"
+                                    Content="▶" 
+                                    Padding="5,-1,5,0"
+                                    FontSize="12"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Width="25"
+                                    Height="25"
+                                    Margin="0,0,5,0"
+                                    Background="LightGray"
+                                    Click="PlaylistPlayBtn_OnBtnClick"
+                            />
+                                <!--Command="{Binding PlayPlaylistCommand}"--> 
+                            <Button x:Name="BtnShuffleHeader"
+                                    Content="🔀" 
+                                    FontSize="18"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Width="25"
+                                    Height="25"
+                                    Margin="5,0"
+                                    Background="LightGray"
+                                    Foreground="Black"
+                                    Padding="-2,-3.3, -2 , -0.5" 
+                                    />
+                            <Button x:Name="BtnImportSong"
+                                    Click="BtnImportSong_OnClick"
+                                    FontWeight="Bold"
+                                    FontSize="22"
+                                    Content="+"
+                                    Background="LightGray"
+                                    Foreground="Black"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Margin="5,0"
+                                    Height="25"
+                                    Width="25"
+                                    Padding="-2,-3.3, -2 , -0.5"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" 
+                                    />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal" 
+                                    HorizontalAlignment="Right"
+                                    >
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBox x:Name="SearchBox"
+                                         Width="200"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,8,0"
+                                         Padding="2"
+                                         Watermark="Search..."
+                                         FontSize="12">
+                                    <TextBox.Styles>
+                                        <!-- Default -->
+                                        <Style Selector="TextBox">
+                                            <Setter Property="Foreground" Value="Gray"/>
+                                        </Style>
+
+                                        <!-- When user typed -->
+                                        <Style Selector="TextBox:not(:empty)">
+                                            <Setter Property="Foreground" Value="Black"/>
+                                        </Style>
+                                    </TextBox.Styles>
+                                    <!--<TextBox.Style Selector="TextBox">
+                                        <Setter Property="Foreground" Value="Gray"/>
+                                        <Setter Property="Text" Value="Search..."/>
+                                        <Style Selector="TextBox:focus">
+                                            <Setter Property="Foreground" Value="Black"/>
+                                            <Setter Property="Text" Value=""/>
+                                        </Style>
+                                    </TextBox.Style>-->
+                                </TextBox>
+                                <!--<ComboBox ItemsSource="{Binding SortOptions}" 
+                                          SelectedItem="{Binding SelectedSortOption}" Margin="10,0,0,0"/>-->
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Playlist Songs -->
+            <ListBox x:Name="PlaylistContent"
+                      ItemsSource="{Binding SongsViewModel.PlaylistSongs}"
+                      DoubleTapped="PlaylistContent_OnMouseDoubleClick"
+                      SizeChanged="PlaylistContent_OnSizeChanged"
+                      BorderThickness="0"
+                      Padding="10,0"
+                      VerticalAlignment="Stretch"
+                      >
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Add to queue" 
+                                  Command="{Binding AddToQueueCommand}"
+                                  CommandParameter="{Binding $parent[ListBox].SelectedItem}">
+                            <!--<MenuItem.Icon>
+                        <PathIcon Data="{StaticResource edit_regular}" />
+                    </MenuItem.Icon>-->
+                        </MenuItem>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+                
+                <!--Height = "Auto"-->
+
+                <!--<ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <d:Style.DataContext>
+                            <models:PlaylistSong />
+                        </d:Style.DataContext>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Style.Triggers>
+                            <DataTrigger Value="True">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
+                                        <Binding Path=".Song.Id" /> ~1~ Song in this row @1@
+                                        <Binding Path="ViewModel.CurrentSong.Song.Id" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <Setter Property="Foreground" Value="Green"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>-->
+                <!--<ListBox.ItemContainerTheme>
+                    <ControlTheme TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+
+                        <Setter Property="Content" >
+                            <Setter.Value>
+                                <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
+                                    <Binding Path="."/>
+                                    <Binding Path="$parent[Window].DataContext.CurrentSong"/>
+                                </MultiBinding>
+                            </Setter.Value>
+                        </Setter>
+                    </ControlTheme>
+                </ListBox.ItemContainerTheme>-->
+
+                <!--<ListBox.View>
+                    <GridView x:Name="GridView">
+                        ~1~ Number Column: Left-aligned @1@
+                        <GridViewColumn Header="#" Width="20">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock 
+                                        Text="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBoxItem}, 
+                                        Path=(ItemsControl.AlternationIndex), Converter={StaticResource IndexToNumberConverter}}"
+                                        HorizontalAlignment="Left"
+                                        TextAlignment="Left"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        ~1~ Title Column: Left-aligned @1@
+                        <GridViewColumn Header="Title" Width="200">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock 
+                                        Text="{Binding Song.Title}"
+                                        HorizontalAlignment="Left"
+                                        TextAlignment="Left"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        ~1~ Artist Column: Center-aligned @1@
+                        <GridViewColumn Header="Artist" Width="100">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock 
+                                        Text="{Binding Song.Artist}"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        ~1~ Date Added Column: Center-aligned @1@
+                        <GridViewColumn Header="Date added" Width="150">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock 
+                                        Text="{Binding HowLongAgo}"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        ~1~ Duration Column: Center-aligned @1@
+                        <GridViewColumn Header="Duration" Width="100">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock 
+                                        Text="{Binding Song.DurationDisplay}"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListBox.View>-->
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid x:Name="PlaylistItems" ColumnDefinitions="30,200,100,150,100">
+
+                            <Grid.Tag>
+                                <MultiBinding Converter="{StaticResource ReferenceEqualityConverter}">
+                                    <Binding Path="Id"/>
+                                    <!--<Binding Path="$parent[5].((vm:MainWindowViewModel)DataContext).CurrentSong"/>-->
+                                    <Binding RelativeSource="{RelativeSource AncestorType=desktop:MainWindow}" Path="((vm:MainWindowViewModel)DataContext).CurrentSong.PlaylistSongId"/>
+                                </MultiBinding>
+                            </Grid.Tag>
+                            
+                            <Grid.Styles>
+
+                                <!-- Default -->
+                                <Style Selector="Grid TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource ForegroundDefault}"/>
+                                    <Setter Property="FontWeight" Value="Normal"/>
+                                </Style>
+
+                                <!-- Playing -->
+                                <Style Selector="Grid[Tag=true] TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource ForegroundPlaying}"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </Style>
+
+                            </Grid.Styles>
+                            
+                            <!-- Index -->
+                            <TextBlock Grid.Column="0"
+                                       HorizontalAlignment="Left">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource IndexToNumberConverter}">
+                                        <!-- current item -->
+                                        <Binding Path="."/>
+    
+                                        <!-- full list -->
+                                        <Binding Path="$parent[ListBox].ItemsSource"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+
+                            <!-- Title -->
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Song.Title}"
+                                       HorizontalAlignment="Left"/>
+
+                            <!-- Artist -->
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding Song.Artist}"
+                                       HorizontalAlignment="Left"/>
+
+                            <!-- Date -->
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding HowLongAgo}"
+                                       HorizontalAlignment="Center"/>
+
+                            <!-- Duration -->
+                            <TextBlock Grid.Column="4"
+                                       Text="{Binding Song.DurationDisplay}"
+                                       HorizontalAlignment="Center"/>
+
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Player.Desktop.Views.TopBarPanel">
+    <!-- Top bar -->
+        <Grid Grid.Row="0" 
+              Background="#222" 
+              PointerPressed="Border_PointerPressed" 
+              Height="35"
+              >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal">
+                <TextBlock Text="RifflePlayer"
+                           Foreground="White"
+                           FontSize="20"
+                           Margin="25,5,30,5"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Window Controls -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Grid.Column="1">
+                <!-- Minimize -->
+                <Button Width="25"
+                        Height="25"
+                        Content="—"
+                        VerticalContentAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        Foreground="White"
+                        Margin="2"
+                        Click="Minimize_Click" />
+
+                <!-- Maximize / Restore -->
+                <Button Width="25"
+                        Height="25"
+                        Content="⬜"
+                        VerticalContentAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        Foreground="White"
+                        FontSize="5"
+                        Margin="2"
+                        Click="Maximize_Click" />
+
+                <!-- Close -->
+                <Button Width="25"
+                        Height="25"
+                        Content="✕"
+                        Margin="2,2,4,2"
+                        VerticalContentAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        FontSize="10"
+                        Click="Close_Click"
+                        Foreground="Red" />
+            </StackPanel>
+        </Grid>
+</UserControl>

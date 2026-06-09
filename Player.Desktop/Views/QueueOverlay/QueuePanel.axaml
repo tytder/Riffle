@@ -1,0 +1,204 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Player.Desktop.ViewModels"
+             xmlns:converters="clr-namespace:Player.Desktop.Converters"
+             xmlns:desktop="clr-namespace:Player.Desktop"
+             xmlns:views="clr-namespace:Player.Desktop.Views"
+             xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
+             xmlns:global="clr-namespace:;assembly=Core"
+             mc:Ignorable="d" d:DesignWidth="206" d:DesignHeight="450"
+             x:DataType="vm:MainWindowViewModel"
+             
+             x:Class="Player.Desktop.Views.QueuePanel">
+    <Grid Margin="5,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Now Playing -->
+            <RowDefinition Height="*"/>     <!-- Sources -->
+        </Grid.RowDefinitions>
+        
+        <!-- Now playing -->
+        <StackPanel Grid.Row="0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock FontSize="12" Foreground="Black"
+                           Text="Now playing from: "
+                           Padding="0,10,10,0"/>
+                <Button HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Background="Transparent"
+                        Foreground="Black"
+                        BorderThickness="0"
+                        Content="{Binding CurrentSongPlaylistName}"
+                        Click="GoToCurrentSongPlaylist">
+                    <!--Width="Auto"-->
+                    <!--<Run Text="{Binding CurrentSongPlaylistName}"/>-->
+                </Button>
+                
+            </StackPanel>
+            <TextBlock Text="{Binding CurrentSongTitle}"
+                       FontSize="12" Foreground="Black"
+                       Padding="10,0,0,0"/>
+            <TextBlock Text="{Binding CurrentSongArtist}"
+                       FontSize="12" Foreground="Black"
+                       Padding="10,0,0,0"/>
+        </StackPanel>
+        <!--<SplitView Grid.Row="1"
+                   DisplayMode="Inline"
+                   PanePlacement="Right"
+                   IsPaneOpen="{Binding IsQueueWindowOpen}"
+                   OpenPaneLength="270"
+                   CompactPaneLength="32">
+            <SplitView.Pane>
+                <views:QueueOverlayPanel DataContext="{Binding}"/>
+            </SplitView.Pane>
+        </SplitView>-->
+             <!-- User queue -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Orientation="Vertical">
+                <Grid IsVisible="{Binding IsQueueVisible}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Tab headers -->
+                        <RowDefinition Height="*"/>    <!-- Tab content -->
+                    </Grid.RowDefinitions>
+                        <Grid
+                            Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/> <!-- Tab headers -->
+                                <ColumnDefinition Width="*"/>    <!-- Tab content -->
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Queue" 
+                                       FontSize="12" Foreground="Black"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Bottom"/>
+                            <Button Grid.Column="1"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Content="Clear queue"
+                                    Background="Transparent"
+                                    Foreground="DimGray"
+                                    BorderThickness="0"
+                                    Click="ClearQueueClick"/>
+                        </Grid>
+                    <ScrollViewer Grid.Row="1" MaxHeight="250">
+                        <ListBox x:Name="UserQueueList"
+                                ItemsSource="{Binding Queue}"
+                                >
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto"
+                                    >
+                                        <!-- TODO Padding="4"-->
+                                        <!-- Title + Artist -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding (models:PlaylistSong).Song.Title}"
+                                                       FontWeight="Bold"/>
+
+                                            <TextBlock Text="{Binding (models:PlaylistSong).Song.Artist}"
+                                                       FontStyle="Italic"
+                                                       FontSize="12"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate> 
+                            <!-- TODO: for performance, maybe only grab queue when queue opened and when queue updated while opened-->
+                        </ListBox>
+                    </ScrollViewer>
+                </Grid>
+                <Border x:Name="PlaylistSourceOverlay"
+                        IsVisible="{Binding IsCurrentPlayingPlaylistQueueVisible}"> <!-- Playlist Source -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <!-- Tab headers -->
+                            <RowDefinition Height="*"/>    <!-- Tab content -->
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" 
+                                Grid.Row="0">
+                            <TextBlock Padding="0,10,10,0"
+                                       FontSize="12" Foreground="Black" 
+                                       Text="Next from: "/>
+                            <Button HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Background="Transparent"
+                                    Foreground="Black"
+                                    BorderThickness="0"
+                                    Content="{Binding CurrentPlaylistName}"
+                                    Click="GoToCurrentPlaylistPlaying">
+                                <!--<Run Text="{Binding (vm:MainWindowViewModel).CurrentPlaylistName, 
+                                                  Mode=OneWay,
+                                                  RelativeSource={RelativeSource AncestorType=Window}}"/>-->
+                            </Button>
+                                <!--Width="Auto"-->
+                        </StackPanel>
+                        <!--<ListBox
+                            Grid.Row="1"
+                            x:Name="QueueListBox"
+                            ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"> 
+                            <ListBox.Resources>
+                                <Style Selector="GridViewColumnHeader">
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Height" Value="0"></Setter>
+                                </Style>
+                            </ListBox.Resources>
+                            <ListBox.ItemContainerTheme>
+                                <ControlTheme TargetType="ListBoxItem">
+                                    <Style Selector="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </Style>
+                                </ControlTheme>
+                            </ListBox.ItemContainerTheme>
+                            <ListBox.View>
+                                <GridView>
+                                    <GridViewColumn
+                                        x:Name="QueueOverlayColumn">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Vertical"
+                                                            d:DataContext="{d:DesignInstance models:PlaylistSong, IsDesignTimeCreatable=False}">
+                                                    <TextBlock Text="{Binding Song.Title}" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding Song.Artist}" FontStyle="Italic" FontSize="12" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListBox.View>
+                        </ListBox>-->
+                        <ScrollViewer Grid.Row="1">
+                            
+                            <ListBox x:Name="QueueListView"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                                <!--<ListBox.ItemContainerTheme>
+                                    <ControlTheme TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </ControlTheme>
+                                </ListBox.ItemContainerTheme>-->
+                                
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,Auto"
+                                              >
+                                              <!-- TODO Padding="4"-->
+                                            <!-- Title + Artist -->
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding (models:PlaylistSong).Song.Title}"
+                                                           FontWeight="Bold"/>
+
+                                                <TextBlock Text="{Binding (models:PlaylistSong).Song.Artist}"
+                                                           FontStyle="Italic"
+                                                           FontSize="12"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate> 
+                            </ListBox>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

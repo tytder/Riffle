@@ -1,0 +1,95 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Player.Desktop.ViewModels"
+             xmlns:converters="clr-namespace:Player.Desktop.Converters"
+             xmlns:desktop="clr-namespace:Player.Desktop"
+             xmlns:views="clr-namespace:Player.Desktop.Views"
+             xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
+             xmlns:global="clr-namespace:;assembly=Core"
+             xmlns:controls="clr-namespace:Player.Controls;assembly=Player"
+             mc:Ignorable="d" d:DesignWidth="206" d:DesignHeight="450"
+             x:DataType="vm:MainWindowViewModel"
+             x:Class="Player.Desktop.Views.QueueOverlayPanel">
+    
+    <Border Background="White"
+            BorderBrush="Gray"
+            BorderThickness="1"
+            x:Name="QueueOverlay"
+            HorizontalAlignment="Right"
+            IsVisible="{Binding IsQueueWindowOpen}">
+            <controls:ScrollableTabControl Width="200" Margin="2" TabStripPlacement="Top">
+                <controls:ScrollableTabControl.Template>
+                    <ControlTemplate TargetType="controls:ScrollableTabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- HEADER -->
+                            <Border Grid.Row="0"
+                                    BorderBrush="Gray"
+                                    BorderThickness="1">
+                                
+                            <Grid >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ScrollViewer Grid.Column="0"
+                                              HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled">
+                                    <ItemsPresenter Name="PART_ItemsPresenter"
+                                                    ItemsPanel="{TemplateBinding ItemsPanel}" />
+                                </ScrollViewer>
+
+                                <Button Grid.Column="1"
+                                        Content="✕"
+                                        Width="20"
+                                        Height="20"
+                                        Command="{Binding ToggleQueuePanelCommand}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="Gray"
+                                        Margin="-10,0,5,0"/>
+                            </Grid>
+                            </Border>
+
+                            <!-- CONTENT -->
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              Grid.Row="1"
+                                              Content="{TemplateBinding SelectedContent}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </controls:ScrollableTabControl.Template>
+                
+                <TabItem Header="Sources" 
+                         FontSize="12" 
+                         BorderBrush="Black" 
+                         BorderThickness="1"
+                         Padding="4,0"
+                         >
+                    <views:QueuePanel/>
+                </TabItem>
+                <TabItem Header="Next Up" 
+                         FontSize="12"
+                         BorderBrush="Black" 
+                         BorderThickness="1"
+                         Padding="4,0"
+                         >
+                    <views:ComingUpPanel/>
+                </TabItem>
+                <TabItem Header="Recents" 
+                         FontSize="12"
+                         BorderBrush="Black" 
+                         BorderThickness="1"
+                         Padding="4,0"
+                         >
+                    <views:RecentlyPlayedPanel/>
+                </TabItem>
+            </controls:ScrollableTabControl>
+        </Border>
+</UserControl>

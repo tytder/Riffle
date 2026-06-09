@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Player.Desktop.Models;
@@ -25,6 +29,7 @@ public partial class MainWindowViewModel : ViewModelBase
     protected PlaybackManager PlaybackManager => _playbackManager;
     private readonly ILibraryManager _libraryManager;
     private readonly IAudioPlayer _player;
+    public IAudioPlayer Player => _player;
 
     public SidebarViewModel SidebarViewModel { get; }
     public SongsViewModel SongsViewModel { get; }
@@ -82,7 +87,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
     public ObservableQueue<PlaylistSong> TotalQueue => _playbackManager.TotalQueue;
-    public List<PlaylistSong> Queue => _playbackManager.Queue;
+    public ObservableCollection<PlaylistSong> Queue => _playbackManager.Queue;
     public bool IsQueueVisible => Queue.Count > 0; // TODO: figure out how to update this.
     
     [ObservableProperty]
@@ -104,7 +109,6 @@ public partial class MainWindowViewModel : ViewModelBase
         var totalDuration = TimeSpan.FromSeconds(playlist.Sum(ps => ps.Song.Duration.TotalSeconds));
         return $"{count} songs, {(int)totalDuration.TotalHours} hr {totalDuration.Minutes} min";
     }
-    
     
     public MainWindowViewModel(
         ILibraryManager libraryManager,
@@ -258,8 +262,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public PlaylistViewModel? GetPlaylistModel(SongPlayed viewModelCurrentSong)
     {
         PlaylistViewModel? playlistViewModel = null;
-        if (viewModelCurrentSong.SongId.HasValue)
-            playlistViewModel = SidebarViewModel.GetPlaylist(viewModelCurrentSong.SongId.Value);
+        if (viewModelCurrentSong.PlaylistId.HasValue)
+            playlistViewModel = SidebarViewModel.GetPlaylist(viewModelCurrentSong.PlaylistId.Value);
         if (viewModelCurrentSong.Playlist != null)
             playlistViewModel ??= SidebarViewModel.AddPlaylist(viewModelCurrentSong.Playlist);
         return playlistViewModel;

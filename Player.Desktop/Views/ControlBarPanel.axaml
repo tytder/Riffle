@@ -1,0 +1,171 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Player.Desktop.ViewModels"
+             xmlns:views="using:Player.Desktop.Views"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:Player.Desktop.Converters"
+             xmlns:models="clr-namespace:Riffle.Core.Models;assembly=Core"
+             xmlns:desktop="clr-namespace:Player.Desktop"
+             xmlns:global="clr-namespace:;assembly=Core"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="vm:MainWindowViewModel"
+             x:Class="Player.Desktop.Views.ControlBarPanel">
+    <!-- Control bar -->
+    <Grid Grid.Row="2" Background="#222">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/> 
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="*"/> 
+        </Grid.ColumnDefinitions>
+        <!-- Left: Song title + artist -->
+        <StackPanel Grid.Column="0"
+                    Margin="10" 
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Left"
+                    >
+            <TextBlock x:Name="TxtSongTitle" Text="Song Title" FontWeight="Bold" FontSize="14" Foreground="White"/>
+            <TextBlock x:Name="TxtArtistName" Text="Artist Name" FontSize="12" Foreground="White"/>
+        </StackPanel>
+
+        <!-- Middle: controls (nested grid for top + bottom rows) -->
+        <Grid Grid.Column="1"
+              Margin="10"
+              HorizontalAlignment="Stretch"
+              >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- buttons row -->
+                <RowDefinition Height="Auto"/> <!-- seekbar row -->
+            </Grid.RowDefinitions>
+
+            <!-- Buttons row -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="BtnShuffle"
+                        Content="🔀" 
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
+                />
+                <Button x:Name="BtnPreviousSong"
+                        Content="⏮" 
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
+                        Click="BtnPreviousSong_OnClick" />
+                <Button x:Name="BtnPauseResume"
+                        Content="▶" 
+                        FontSize="16"
+                        Padding="2,-2, 2, -0.5"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Margin="5,5"
+                        Click="OnPauseResume" />
+                <Button x:Name="BtnNextSong"
+                        Content="⏭" 
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
+                        Click="BtnNextSong_OnClick" />
+                <Button x:Name="BtnLoop"
+                        Content="🔁" 
+                        FontSize="20"
+                        HorizontalContentAlignment="Center"
+                        Width="24"
+                        Height="24"
+                        Padding="-2.5,-3.5, -2, -0.5"
+                        Margin="5,5"
+                        Click="BtnLoop_OnClick"
+                        Background="White" />
+            </StackPanel>
+
+            <!-- Seekbar row with times -->
+            <Grid Grid.Row="1" Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="TxtCurrentTime"
+                           Text="0:00"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           Margin="5"
+                           Foreground="White" />
+                <Slider x:Name="SeekBar"
+                        Grid.Column="1"
+                        Minimum="0"
+                        Maximum="100"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        Margin="5"
+                        PointerCaptureLost="SeekBar_PointerReleased"
+                        ValueChanged="SeekBar_ValueChanged">
+                    <!--IsMoveToPointEnabled="False"-->
+                    <!--PointerMoved="SeekBar_PointerMoved"
+                    PointerPressed="SeekBar_PointerPressed"
+                    Holding="SeekBar_Holding"-->
+                </Slider>
+                <TextBlock x:Name="TxtTotalTime"
+                           Text="3:45"
+                           Grid.Column="2"
+                           VerticalAlignment="Center"
+                           Margin="5"
+                           Foreground="White" />
+            </Grid>
+        </Grid>
+
+        <!-- Right: Queue + volume -->
+        <Grid Grid.Column="2"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Stretch"
+              Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="TxtVolumePercentage"
+                       Grid.Column="1"
+                       Grid.Row="0"
+                       HorizontalAlignment="Center"
+                       Text="100%"
+                       Foreground="White"
+            />
+            <Button Content="Q" 
+                    Margin="0,5" 
+                    Grid.Column="0"
+                    Grid.Row="1"
+                    HorizontalAlignment="Right"
+                    Command="{Binding ToggleQueuePanelCommand}"
+                    />
+            <Slider x:Name="VolumeBar"
+                    Minimum="0"
+                    Maximum="100"
+                    Value="100"
+                    HorizontalAlignment="Stretch"
+                    MinWidth="10"
+                    MaxWidth="200"
+                    VerticalAlignment="Center"
+                    Margin="0"
+                    Grid.Column="1"
+                    Grid.Row="1"
+                    ValueChanged="VolumeBar_ValueChanged" />
+                <!--IsMoveToPointEnabled="True"-->
+        </Grid>
+    </Grid>
+</UserControl>

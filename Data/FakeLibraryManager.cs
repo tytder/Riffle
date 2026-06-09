@@ -9,7 +9,7 @@ public class FakeLibraryManager : ILibraryManager
     private List<Playlist> _playlists = new();
     private List<Song> _songs = new();
     private List<PlaylistSong> _playlistSongs = new();
-    private List<SongPlayed> _songHistory;
+    private List<SongPlayed> _songHistory = new();
     public bool IsInitialized { get; private set; }
 
     public async void Initialize()

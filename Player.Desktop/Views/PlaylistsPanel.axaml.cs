@@ -6,34 +6,53 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Player.Desktop.ViewModels;
 
 namespace Player.Desktop.Views;
 
 public partial class PlaylistsPanel : UserControl
 {
-    public MainWindowViewModel ViewModel { get; set; }
+    private MainWindowViewModel _viewModel;
+
+    public MainWindowViewModel ViewModel
+    {
+        get => _viewModel;
+        set
+        {
+            _viewModel = value;
+            NewViewModelSet();
+        }
+    }
+
+    private void NewViewModelSet()
+    {
+        PlaylistList.SelectedIndex = 0;
+        PlaylistList.ItemsSource = ViewModel.SidebarViewModel.Playlists;
+    }
+
     public PlaylistsPanel()
     {
         InitializeComponent();
         
         DataContextChanged += OnDataContextChanged;
 
-        if (ViewModel == null)
+        if (DataContext is MainWindowViewModel dc) ViewModel = dc;
+        else if (TopLevel.GetTopLevel(this) is Window { DataContext: MainWindowViewModel tl })
         {
-            if (TopLevel.GetTopLevel(this) is not Window window) return;
-            if (window.DataContext is not MainWindowViewModel vm) return;
-            ViewModel = vm;
+            ViewModel = tl;
         }
+        else
+        {
+            ViewModel = App.ServiceProvider.GetRequiredService<MainWindowViewModel>();
+        }
+        _viewModel = ViewModel;
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
         if (DataContext is not MainWindowViewModel vm) return;
         ViewModel = vm;
-        
-        PlaylistList.SelectedIndex = 0;
-        PlaylistList.ItemsSource = ViewModel.SidebarViewModel.Playlists;
     }
 
     private void PlaylistList_OnSizeChanged(object? sender, SizeChangedEventArgs e)

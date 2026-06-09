@@ -21,7 +21,7 @@ public class Playlist
         LastPlayed = DateTime.UtcNow;
     }
 
-    public string Name { get; private set; }
+    public string Name { get; private set; } = "New Playlist";
     public Guid Id { get; private set; }
     public bool IsAllSongs { get; private set; }
     public DateTime LastPlayed { get; private set; }
