@@ -32,6 +32,15 @@ public class PlaylistSong
         DateAdded = DateTime.UtcNow;
     }
 
+    public PlaylistSong(PlaylistSong original, Playlist newPlaylist)
+    {
+        Song = original.Song;
+        SongId = original.Song.Id;
+        Playlist = newPlaylist;
+        PlaylistId = newPlaylist.Id;
+        DateAdded = DateTime.UtcNow;
+    }
+
     public override bool Equals(object? obj)
     {
         if (obj is not PlaylistSong otherSong) return false;

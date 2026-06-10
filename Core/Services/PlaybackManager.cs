@@ -13,16 +13,18 @@ namespace Riffle.Core.Services;
 
 public class PlaybackManager : INotifyPropertyChanged
 {
-    public ObservableCollection<PlaylistSong> Queue => _queue;
-    private ObservableQueue<PlaylistSong> _queue; 
-    public event NotifyCollectionChangedEventHandler? QueueCollectionChanged;
+    private readonly IAudioPlayer _player;
+    // Queue populated by songs the user manually adds.
+    public ObservableCollection<PlaylistSong> UserQueue => _userQueue.PlaylistItems;
+    private QueuePlaylist _userQueue; 
     public ObservableQueue<SongPlayed> RecentlyPlayed;
     
-    private readonly IAudioPlayer _player;
-    private Playlist? _playingPlaylist;
-    private List<PlaylistSong>? _playlistSource;
-
+    // The total (shuffled) queue, always showing current playing song at the top.
     public ObservableQueue<PlaylistSong> TotalQueue;
+    // The total (shuffled) queue as it was when it got created. Not keeping track of where we are in the playlist.
+    private List<PlaylistSong> _nonTrackingTotalQueue;
+    // List of all sources of which the non tracking total queue consists of.
+    private List<Playlist> _sources;
     
     private SongPlayed? _currentSong;
     public SongPlayed? CurrentSong
@@ -37,40 +39,45 @@ public class PlaybackManager : INotifyPropertyChanged
             }
         }
     }
+    
+    // int representing the int of the index of the currentsong in the non tracking total queue.
+    private int _currentIndex;
+    
     public bool IsLooping { get; private set; }
     public event EventHandler<TrackEventArgs>? TrackStopped;
+    public event NotifyCollectionChangedEventHandler? UserQueueCollectionChanged;
     
     public PlaybackManager(IAudioPlayer audioPlayer)
     {
         _player = audioPlayer;
         _player.TrackEnded += PlayerOnTrackEnded;
         RecentlyPlayed = new ObservableQueue<SongPlayed>(50, true);
-        _queue = new ObservableQueue<PlaylistSong>();
-        _queue.CollectionChanged += OnQueueCollectionChanged;
+        _userQueue = new QueuePlaylist("Queue");
+        _userQueue.QueuePlaylistItems.CollectionChanged += OnUserQueueCollectionChanged;
+        _nonTrackingTotalQueue = new List<PlaylistSong>();
         TotalQueue = new ObservableQueue<PlaylistSong>();
+        _sources = [_userQueue];
     }
 
-    private void OnQueueCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void OnUserQueueCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        OnPropertyChanged(nameof(Queue));
-        var handler = QueueCollectionChanged;
+        OnPropertyChanged(nameof(UserQueue));
+        var handler = UserQueueCollectionChanged;
         handler?.Invoke(sender, e);
     }
 
-    public void PlayFrom(PlaylistSong song, Playlist? playlist)
+    public void PlayFrom(PlaylistSong song)
     {
         Stop();
-        if (playlist == null) return;
-        var songs = playlist.PlaylistItems.ToList();
-        if (!songs.Contains(song)) return;
 
-        _playingPlaylist = playlist;
-        _playlistSource = songs;
-
-        RecreateTotalQueue(song);
+        // if user started playing from new playlist, clear current sources and rebuild everything.
+        if (!_sources.Contains(song.Playlist))
+        {
+            RecreateSources(song);
+        }
         
-        var curSong = TotalQueue.Peek();
-        CurrentSong = new SongPlayed(curSong, DateTime.UtcNow);
+        RecreateTotalQueue(song);
+        CurrentSong = new SongPlayed(song, DateTime.UtcNow);
         _player.Play(CurrentSong!);
     }
 
@@ -93,22 +100,21 @@ public class PlaybackManager : INotifyPropertyChanged
 
     public void SkipToNextSong(bool naturallyEnded = false)
     {
-        if (_playlistSource == null) return;
-        if (_playlistSource.Count == 0 || CurrentSong == null)
+        if (_nonTrackingTotalQueue.Count == 0 || CurrentSong == null)
             return;
-        //int index = _playlistSource.IndexOf(CurrentSong) + 1;
-        int index = _playlistSource.FindIndex(ps => ps.Song.Equals(CurrentSong.Song)) + 1;
         
-        if (index >= _playlistSource.Count)
+        _currentIndex++;
+        
+        if (_currentIndex >= _nonTrackingTotalQueue.Count)
         {
             if (IsLooping)
-                index = 0;
+                _currentIndex = 0;
             else
             {
                 if (naturallyEnded)
                 {
                     Stop();
-                    _playlistSource?.Clear();
+                    _nonTrackingTotalQueue?.Clear();
                     return;
                 }
                 else
@@ -121,21 +127,20 @@ public class PlaybackManager : INotifyPropertyChanged
             }
         }
 
-        PlayFrom(_playlistSource[index], _playingPlaylist);
+        PlayFrom(_nonTrackingTotalQueue[_currentIndex]);
     }
 
     public void SkipToPrevSong()
     {
-        if (_playlistSource == null) return;
-        if (_playlistSource.Count == 0 || CurrentSong == null)
+        if (_nonTrackingTotalQueue.Count == 0 || CurrentSong == null)
             return;
 
-        //int index = _playlistSource.IndexOf(CurrentSong) - 1;
-        int index = _playlistSource.FindIndex(ps => ps.Song.Equals(CurrentSong.Song)) - 1;
-        if (index < 0)
+        if (_currentIndex >= 0) _currentIndex--;
+        
+        if (_currentIndex < 0)
         {
             if (IsLooping)
-                index = _playlistSource.Count - 1;
+                _currentIndex = _nonTrackingTotalQueue.Count - 1;
             else
             {
                 Stop();
@@ -143,66 +148,106 @@ public class PlaybackManager : INotifyPropertyChanged
             }
         }
 
-        PlayFrom(_playlistSource[index], _playingPlaylist);
+        PlayFrom(_nonTrackingTotalQueue[_currentIndex]);
     }
 
     public void ToggleLoop()
     {
         IsLooping = !IsLooping;
         if (CurrentSong == null) return;
-        if (_playlistSource == null) return;
+        RecreateTotalQueue();
         //var startIndex = _playlistSource.IndexOf(CurrentSong);
-        int startIndex = _playlistSource.FindIndex(ps => ps.Song.Equals(CurrentSong.Song));
-        for (var index = 0; index < _playlistSource.Count; index++)
+        /*int startIndex = _nonTrackingTotalQueue.FindIndex(ps => ps.Song.Equals(CurrentSong.Song));
+        for (var index = 0; index < _nonTrackingTotalQueue.Count; index++)
         {
             if (IsLooping)
             {
-                var playlistSong = _playlistSource[(startIndex + index) % _playlistSource.Count];
+                var playlistSong = _nonTrackingTotalQueue[(startIndex + index) % _nonTrackingTotalQueue.Count];
                 if (TotalQueue.Contains(playlistSong)) continue;
                 TotalQueue.Enqueue(playlistSong);
             }
             else
             {
                 if (index >= startIndex) break;
-                var playlistSong = _playlistSource[index];
+                var playlistSong = _nonTrackingTotalQueue[index];
                 if (!TotalQueue.Contains(playlistSong)) continue;
                 TotalQueue.Remove(playlistSong);
             }
-        }
+        }*/
     }
 
-    private void RecreateTotalQueue(PlaylistSong song)
+    private void RecreateSources(PlaylistSong song, bool reshuffle = true)
     {
-        if (_playlistSource == null)
-            throw new NullReferenceException(
-                $"{nameof(RecreateTotalQueue)} was called while {nameof(_playlistSource)} is null)");
-        var startIndex = 0;
-        if (!_queue.Contains(song))
+        if (!_sources.Contains(song.Playlist)) _sources.Add(song.Playlist);
+        RecreateSources(reshuffle);
+    }
+    
+    private void RecreateSources(bool reshuffle = true)
+    {
+        if (reshuffle)
         {
-            startIndex = _playlistSource.IndexOf(song);
+            _nonTrackingTotalQueue = _sources.SelectMany(s => s.PlaylistItems).ToList();
         }
-        var ordered = _playlistSource.Skip(startIndex).Concat(_playlistSource.Take(IsLooping ? startIndex : 0));
-        var queue = _queue.ToList();
-        queue.AddRange(ordered);
-        TotalQueue = new ObservableQueue<PlaylistSong>(queue);
+        // TODO: shuffle logic
+        /*if (reshuffle)
+        {
+            
+        }*/
+    }
+
+    private void RecreateTotalQueue(PlaylistSong? song = null)
+    {
+        if (_nonTrackingTotalQueue == null)
+            throw new NullReferenceException(
+                $"{nameof(RecreateTotalQueue)} was called while {nameof(_nonTrackingTotalQueue)} is null)");
+        var startIndex = _currentIndex;
+        if (song != null)
+        {
+            if (_nonTrackingTotalQueue.Contains(song))
+            {
+                startIndex = _nonTrackingTotalQueue.IndexOf(song);
+            }
+        }
+        var ordered = _nonTrackingTotalQueue.Skip(startIndex).Concat(_nonTrackingTotalQueue.Take(IsLooping ? startIndex : 0));
+        //TotalQueue = new ObservableQueue<PlaylistSong>(ordered);
+        TotalQueue.Clear();
+        TotalQueue.AddRange(ordered);
+        OnPropertyChanged(nameof(TotalQueue));
+        _currentIndex = startIndex;
     }
     
     // TODO: Look into why natural end of last song of ghost playlist doesnt switch to no selected song
-    public void OnPlaylistRemoved(object? sender, PlaylistEventArgs e)
+     public void OnPlaylistRemoved(object? sender, PlaylistEventArgs e)
     {
-        if (!e.Playlist.Equals(_playingPlaylist)) return;
-        
-        _playingPlaylist = null;
+        if (!_sources.Contains(e.Playlist)) return;
+
+        _sources.Remove(e.Playlist);
+        foreach (var playlistItem in e.Playlist.PlaylistItems.ToArray())
+        {
+            // Only remove the songs from the deleted playlist if they aren't in the user's queue.
+            //if (_nonTrackingTotalQueue.Contains(playlistItem) && !_userQueue.PlaylistItems.Contains(playlistItem)) 
+                _nonTrackingTotalQueue.Remove(playlistItem);
+        }
+        /*
+            if (!e.Playlist.Equals(_playingPlaylist)) return;
+
+            _playingPlaylist = null;
+        */
     }
 
     public void AddToUserQueue(PlaylistSong songToAdd)
     {
-        _queue.Add(songToAdd);
+        var queueSong = new PlaylistSong(songToAdd, _userQueue);
+        _userQueue.QueuePlaylistItems.Add(queueSong);
+        RecreateSources();
+        RecreateTotalQueue();
     }
     
     public void ClearUserQueue()
     {
-        _queue.Clear();
+        _userQueue.QueuePlaylistItems.Clear();
+        RecreateSources();
+        RecreateTotalQueue();
     }
     
     public event PropertyChangedEventHandler? PropertyChanged;

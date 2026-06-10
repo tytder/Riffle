@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Riffle.Core.Utilities;
 
 namespace Riffle.Core.Models;
 
@@ -8,13 +9,8 @@ public class Playlist
     {
         
     }
- 
-    public Playlist(string name) : this (name, false)
-    {
-    }
-
-
-    public Playlist(string name, bool isAllSongs)
+    
+    public Playlist(string name, bool isAllSongs = false)
     {
         Name = name;
         IsAllSongs = isAllSongs;
@@ -26,7 +22,7 @@ public class Playlist
     public bool IsAllSongs { get; private set; }
     public DateTime LastPlayed { get; private set; }
 
-    public ICollection<PlaylistSong> PlaylistItems{ get; private set; }
+    public virtual ObservableCollection<PlaylistSong> PlaylistItems{ get; private set; }
         = new ObservableCollection<PlaylistSong>();
     
     public override bool Equals(object? obj)
@@ -35,4 +31,15 @@ public class Playlist
     }
 
     public override int GetHashCode() => Id.GetHashCode();
+}
+
+public class QueuePlaylist : Playlist
+{
+    public QueuePlaylist() : base() { }
+    public QueuePlaylist(string name) : base(name) { }
+    
+    public ObservableQueue<PlaylistSong> QueuePlaylistItems { get; private set; }
+        = new ObservableQueue<PlaylistSong>();
+
+    public override ObservableCollection<PlaylistSong> PlaylistItems => QueuePlaylistItems;
 }

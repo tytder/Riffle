@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Riffle.Core.Models;
 
 namespace Riffle.Core.Utilities;
 
@@ -9,18 +10,35 @@ public class ObservableQueue<T> : ObservableCollection<T>
 
     public IList<T> Entries => Items; 
 
+    /// <summary>
+    /// Constructor for an observable queue.
+    /// </summary>
+    /// <param name="maxCapacity">The max amount of items this queue can hold.</param>
+    /// <param name="isReverseQueue">Whether the queue adds items to the top or not (with adding to the top being seen as "reverse").</param>
     public ObservableQueue(int maxCapacity = int.MaxValue, bool isReverseQueue = false)
     {
         _maxCapacity = maxCapacity;
         _isReverseQueue = isReverseQueue;
     }
     
+    /// <summary>
+    /// Constructor for an observable queue.
+    /// </summary>
+    /// <param name="collection">Collection to copy items from.</param>
+    /// <param name="maxCapacity">The max amount of items this queue can hold.</param>
+    /// <param name="isReverseQueue">Whether the queue adds items to the top or not (with adding to the top being seen as "reverse").</param>
     public ObservableQueue(IEnumerable<T> collection, int maxCapacity = int.MaxValue, bool isReverseQueue = false) : base(new List<T>(collection ?? throw new ArgumentNullException(nameof(collection))))
     {
         _maxCapacity = maxCapacity;
         _isReverseQueue = isReverseQueue;
     }
     
+    /// <summary>
+    /// Constructor for an observable queue.
+    /// </summary>
+    /// <param name="list">List to copy items from.</param>
+    /// <param name="maxCapacity">The max amount of items this queue can hold.</param>
+    /// <param name="isReverseQueue">Whether the queue adds items to the top or not (with adding to the top being seen as "reverse").</param>
     public ObservableQueue(List<T> list, int maxCapacity = int.MaxValue, bool isReverseQueue = false) : base(new List<T>(list ?? throw new ArgumentNullException(nameof(list))))
     {
         _maxCapacity = maxCapacity;
@@ -53,5 +71,10 @@ public class ObservableQueue<T> : ObservableCollection<T>
         if (Count == 0) throw new InvalidOperationException("Queue is empty");
         int index = peekOldest ? Count - 1 : 0;
         return this[index];
+    }
+
+    public void AddRange(IEnumerable<T> rangeToAdd)
+    {
+        foreach (T item in rangeToAdd.ToArray()) Add(item);
     }
 }

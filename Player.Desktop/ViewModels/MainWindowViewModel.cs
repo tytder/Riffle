@@ -87,7 +87,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public string SelectedPlaylistInfo => GetPlaylistInfo();
     public ObservableQueue<PlaylistSong> TotalQueue => _playbackManager.TotalQueue;
-    public ObservableCollection<PlaylistSong> Queue => _playbackManager.Queue;
+    public ObservableCollection<PlaylistSong> Queue => _playbackManager.UserQueue;
     public bool IsQueueVisible => Queue.Count > 0; // TODO: figure out how to update this.
     
     [ObservableProperty]
@@ -128,7 +128,7 @@ public partial class MainWindowViewModel : ViewModelBase
         
         _playbackManager = playbackManager;
         _playbackManager.PropertyChanged += PlaybackPropertyChanged;
-        _playbackManager.QueueCollectionChanged += PlaybackQueueChanged;
+        _playbackManager.UserQueueCollectionChanged += PlaybackUserQueueChanged;
         PlaylistRemoved += _playbackManager.OnPlaylistRemoved;
     }
 
@@ -137,12 +137,12 @@ public partial class MainWindowViewModel : ViewModelBase
         if (_playbackManager != null)
         {
             _playbackManager.PropertyChanged -= PlaybackPropertyChanged;
-            _playbackManager.QueueCollectionChanged -= PlaybackQueueChanged;
+            _playbackManager.UserQueueCollectionChanged -= PlaybackUserQueueChanged;
             PlaylistRemoved -= _playbackManager.OnPlaylistRemoved;
         }
     }
 
-    private void PlaybackQueueChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void PlaybackUserQueueChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         OnPropertyChanged(nameof(Queue));
         OnPropertyChanged(nameof(IsQueueVisible));
@@ -197,7 +197,7 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentPlaylistPlaying = selectedPlaylistViewModel;
         
         // Start playback
-        _playbackManager.PlayFrom(songToPlay, playlist);
+        _playbackManager.PlayFrom(songToPlay);
     }
 
     private PlaylistSong? GetFirstSong(Playlist selectPlaylist)
@@ -210,15 +210,21 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void PlaybackPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(_playbackManager.CurrentSong))
+        switch (e.PropertyName)
         {
-            OnPropertyChanged(nameof(CurrentSong));
-            OnPropertyChanged(nameof(CurrentSongTitle));
-            OnPropertyChanged(nameof(CurrentSongArtist));
-            OnPropertyChanged(nameof(CurrentSongPlaylistName));
+            case nameof(_playbackManager.CurrentSong):
+                OnPropertyChanged(nameof(CurrentSong));
+                OnPropertyChanged(nameof(CurrentSongTitle));
+                OnPropertyChanged(nameof(CurrentSongArtist));
+                OnPropertyChanged(nameof(CurrentSongPlaylistName));
+                break;
+            case nameof(_playbackManager.RecentlyPlayed):
+                OnPropertyChanged(nameof(RecentlyPlayed));
+                break;
+            case nameof(_playbackManager.TotalQueue):
+                OnPropertyChanged(nameof(TotalQueue));
+                break;
         }
-        if (e.PropertyName == nameof(_playbackManager.RecentlyPlayed))
-            OnPropertyChanged(nameof(RecentlyPlayed));
     }
 
     public PlaylistSong AddSong(Song newSong, Playlist playlist)
